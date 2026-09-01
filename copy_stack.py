@@ -82,6 +82,7 @@ class CopyStackApp:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.items: list[str] = []
+        self._toast = None  # نافذة الإشعار الصغيرة
 
         root.title("Copy Stack — حافظة متعددة النسخ")
         root.geometry("560x520")
@@ -145,6 +146,21 @@ class CopyStackApp:
             command=lambda: self.root.attributes("-topmost", self.topmost_var.get()),
         ).pack(side="left")
 
+        opts2 = ttk.Frame(self.root, padding=(10, 0))
+        opts2.pack(fill="x")
+        self.number_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            opts2,
+            text="ترقيم العناصر عند اللصق (1. ... 2. ...)",
+            variable=self.number_var,
+        ).pack(side="right")
+        self.toast_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            opts2,
+            text="إشعار عند كل نسخة",
+            variable=self.toast_var,
+        ).pack(side="left")
+
         # الأزرار
         btns = ttk.Frame(self.root, padding=(10, 4))
         btns.pack(fill="x")
@@ -181,14 +197,48 @@ class CopyStackApp:
         # يُستدعى من خيط المراقبة — ننقل التنفيذ لخيط الواجهة
         self.root.after(0, self._add_item, text)
 
+    @staticmethod
+    def _label(n: int, text: str) -> str:
+        preview = " ".join(text.split())
+        if len(preview) > 70:
+            preview = preview[:67] + "..."
+        return f"📄 نسخة {n}: {preview}"
+
     def _add_item(self, text: str):
         self.items.append(text)
-        preview = " ".join(text.split())
-        if len(preview) > 80:
-            preview = preview[:77] + "..."
-        self.listbox.insert("end", f"{len(self.items)}. {preview}")
+        n = len(self.items)
+        self.listbox.insert("end", self._label(n, text))
         self.listbox.see("end")
-        self.status_var.set(f"تمت إضافة عنصر جديد — المجموع: {len(self.items)}")
+        self.status_var.set(f"✅ نسخة {n} محفوظة — المجموع: {n}")
+        if self.toast_var.get():
+            self._show_toast(f"نسخة {n} ✅")
+
+    def _show_toast(self, message: str):
+        """إشعار صغير أسفل يمين الشاشة يختفي تلقائياً."""
+        if self._toast is not None:
+            try:
+                self._toast.destroy()
+            except tk.TclError:
+                pass
+        toast = tk.Toplevel(self.root)
+        self._toast = toast
+        toast.overrideredirect(True)
+        toast.attributes("-topmost", True)
+        label = tk.Label(
+            toast,
+            text=message,
+            font=("Segoe UI", 12, "bold"),
+            bg="#2e7d32",
+            fg="white",
+            padx=18,
+            pady=10,
+        )
+        label.pack()
+        toast.update_idletasks()
+        sw, sh = toast.winfo_screenwidth(), toast.winfo_screenheight()
+        w, h = toast.winfo_width(), toast.winfo_height()
+        toast.geometry(f"+{sw - w - 24}+{sh - h - 72}")
+        toast.after(1500, toast.destroy)
 
     def _copy_one(self, _event=None):
         sel = self.listbox.curselection()
@@ -201,6 +251,8 @@ class CopyStackApp:
     # ------------------------------------------------------------- Actions
     def _join(self, texts):
         sep = SEPARATORS.get(self.sep_var.get(), "\n")
+        if self.number_var.get():
+            texts = [f"{n}. {t}" for n, t in enumerate(texts, start=1)]
         return sep.join(texts)
 
     def copy_all(self):
@@ -242,10 +294,7 @@ class CopyStackApp:
     def _refresh_list(self):
         self.listbox.delete(0, "end")
         for n, text in enumerate(self.items, start=1):
-            preview = " ".join(text.split())
-            if len(preview) > 80:
-                preview = preview[:77] + "..."
-            self.listbox.insert("end", f"{n}. {preview}")
+            self.listbox.insert("end", self._label(n, text))
 
     def toggle_pause(self):
         self.monitor.paused = not self.monitor.paused
