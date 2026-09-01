@@ -14,9 +14,11 @@ Copy Stack — حافظة متعددة النسخ
 المتطلبات: pip install pyperclip
 """
 
+import json
 import threading
 import time
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk, messagebox
 
 try:
@@ -27,6 +29,8 @@ except ImportError:
     )
 
 POLL_INTERVAL = 0.4  # ثوانٍ بين كل فحص للحافظة
+HISTORY_FILE = Path.home() / ".copy_stack_history.json"  # ملف حفظ النسخ
+MAX_HISTORY = 500  # أقصى عدد عناصر محفوظة
 
 SEPARATORS = {
     "سطر جديد": "\n",
@@ -92,8 +96,34 @@ class CopyStackApp:
         self.monitor = ClipboardMonitor(self._on_new_text)
 
         self._build_ui()
+        self._load_history()
         self.monitor.start()
         root.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    # ------------------------------------------------------------- History
+    def _load_history(self):
+        """تحميل النسخ المحفوظة من الجلسات السابقة."""
+        try:
+            data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                self.items = [t for t in data if isinstance(t, str)][-MAX_HISTORY:]
+        except (FileNotFoundError, json.JSONDecodeError, OSError):
+            return
+        if self.items:
+            self._refresh_list()
+            self.listbox.see("end")
+            self.status_var.set(
+                f"تم استرجاع {len(self.items)} نسخة من الجلسة السابقة ✅"
+            )
+
+    def _save_history(self):
+        try:
+            HISTORY_FILE.write_text(
+                json.dumps(self.items[-MAX_HISTORY:], ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self):
@@ -210,11 +240,12 @@ class CopyStackApp:
         self.listbox.insert("end", self._label(n, text))
         self.listbox.see("end")
         self.status_var.set(f"✅ نسخة {n} محفوظة — المجموع: {n}")
+        self._save_history()
         if self.toast_var.get():
             self._show_toast(f"نسخة {n} ✅")
 
     def _show_toast(self, message: str):
-        """إشعار صغير أسفل يمين الشاشة يختفي تلقائياً."""
+        """إشعار صغير يظهر بجانب مؤشر الماوس ويختفي تلقائياً."""
         if self._toast is not None:
             try:
                 self._toast.destroy()
@@ -237,7 +268,13 @@ class CopyStackApp:
         toast.update_idletasks()
         sw, sh = toast.winfo_screenwidth(), toast.winfo_screenheight()
         w, h = toast.winfo_width(), toast.winfo_height()
-        toast.geometry(f"+{sw - w - 24}+{sh - h - 72}")
+        # موقع مؤشر الماوس الحالي (يعمل حتى خارج نافذة البرنامج)
+        x = self.root.winfo_pointerx() + 16
+        y = self.root.winfo_pointery() + 20
+        # إبقاء الإشعار داخل حدود الشاشة
+        x = max(0, min(x, sw - w - 4))
+        y = max(0, min(y, sh - h - 4))
+        toast.geometry(f"+{x}+{y}")
         toast.after(1500, toast.destroy)
 
     def _copy_one(self, _event=None):
@@ -282,6 +319,7 @@ class CopyStackApp:
         for i in reversed(sel):
             del self.items[i]
         self._refresh_list()
+        self._save_history()
         self.status_var.set(f"تم الحذف — المتبقي: {len(self.items)}")
 
     def clear_all(self):
@@ -289,6 +327,7 @@ class CopyStackApp:
             return
         self.items.clear()
         self._refresh_list()
+        self._save_history()
         self.status_var.set("تم مسح القائمة — ابدأ النسخ من جديد")
 
     def _refresh_list(self):
