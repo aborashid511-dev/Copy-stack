@@ -1,11 +1,11 @@
 <title>حاسبة التفريغ الجزئي الميدانية</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;700&display=swap">
 <style>
-/* Layout: an instrument-panel tool — equipment selector → test matrix → sensor calculators in tabs → saved calibrations. RTL, single column, readouts in mono. */
+/* Layout: field instrument workbench — sticky section nav; guide → survey → log → calculators → PRPD → calibration. RTL, readouts in mono. */
 :root{
-  --bg:#f2f4f6; --surface:#ffffff; --sunk:#e9edf1; --ink:#15202b; --muted:#5a6775; --line:#d6dce3;
-  --accent:#1e5aa0; --accent-ink:#ffffff; --accent-soft:#e2ecf7;
+  --bg:#f2f4f6; --surface:#ffffff; --sunk:#e9edf1; --ink:#15202b; --muted:#5a6775; --line:#d6dce3; --grid:#e3e8ed;
+  --accent:#1e5aa0; --accent-ink:#ffffff; --accent-soft:#e2ecf7; --accent-wash:rgba(30,90,160,.10);
   --hazard:#e6ad00; --hazard-ink:#15202b;
   --ok:#1d7548; --ok-soft:#e1f2e8; --warn:#9a5b00; --warn-soft:#fbefd9; --bad:#b0261a; --bad-soft:#fbe4e1;
   --f-display:"Reem Kufi","IBM Plex Sans Arabic",system-ui,sans-serif;
@@ -14,89 +14,105 @@
   --r:10px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0e141a; --surface:#161f28; --sunk:#111920; --ink:#e4e9ee; --muted:#98a5b2; --line:#2a3541;
-  --accent:#6ea6e6; --accent-ink:#0e141a; --accent-soft:#1a2b40;
+  --bg:#0e141a; --surface:#161f28; --sunk:#111920; --ink:#e4e9ee; --muted:#98a5b2; --line:#2a3541; --grid:#222c37;
+  --accent:#6ea6e6; --accent-ink:#0e141a; --accent-soft:#1a2b40; --accent-wash:rgba(110,166,230,.12);
   --hazard:#e6ad00; --hazard-ink:#0e141a;
   --ok:#57c690; --ok-soft:#143024; --warn:#e3a742; --warn-soft:#33270f; --bad:#f07a6a; --bad-soft:#3a1a17;
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0e141a; --surface:#161f28; --sunk:#111920; --ink:#e4e9ee; --muted:#98a5b2; --line:#2a3541;
-  --accent:#6ea6e6; --accent-ink:#0e141a; --accent-soft:#1a2b40;
+  --bg:#0e141a; --surface:#161f28; --sunk:#111920; --ink:#e4e9ee; --muted:#98a5b2; --line:#2a3541; --grid:#222c37;
+  --accent:#6ea6e6; --accent-ink:#0e141a; --accent-soft:#1a2b40; --accent-wash:rgba(110,166,230,.12);
   --hazard:#e6ad00; --hazard-ink:#0e141a;
   --ok:#57c690; --ok-soft:#143024; --warn:#e3a742; --warn-soft:#33270f; --bad:#f07a6a; --bad-soft:#3a1a17;
   color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;direction:rtl}
-.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:0 48px;display:flex;flex-direction:column;gap:28px}
-h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.25;text-wrap:balance;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65;direction:rtl}
+.wrap{max-width:1020px;margin:0 auto;padding-inline:16px;padding-block:0 56px;display:flex;flex-direction:column;gap:22px}
+h1,h2{font-family:var(--f-display);font-weight:700;line-height:1.25;text-wrap:balance;margin:0}
 h1{font-size:clamp(1.5rem,4.5vw,2.1rem)}
-h2{font-size:1.25rem}
-h3{font-size:1.02rem;font-family:var(--f-body);font-weight:600}
+h2{font-size:1.35rem}
+h3{font-size:1.02rem;font-weight:600;margin:0;line-height:1.35}
 p{margin:0}
-.muted{color:var(--muted)}
-.small{font-size:.85rem}
+.muted{color:var(--muted)} .small{font-size:.85rem}
 .mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
 .eyebrow{font-size:.75rem;letter-spacing:.06em;color:var(--muted);font-weight:600}
-
-/* header */
-.top{padding-block:22px 4px;display:flex;flex-direction:column;gap:8px}
+.lede{max-width:68ch;color:var(--muted)}
+.top{padding-block:22px 0;display:flex;flex-direction:column;gap:8px}
 .hz{height:6px;border-radius:3px;background:repeating-linear-gradient(-45deg,var(--hazard) 0 10px,var(--hazard-ink) 10px 20px);width:120px}
-.top p{max-width:62ch}
-
-/* equipment selector */
-.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-.eq{appearance:none;text-align:start;font:inherit;color:inherit;background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
-.eq b{font-family:var(--f-display);font-size:1.05rem}
-.eq span{font-size:.82rem;color:var(--muted)}
-.eq[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
-.eq:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-
-/* tests for equipment */
-.eqnote{background:var(--sunk);border-radius:var(--r);padding:12px 14px;font-size:.92rem}
-.tests{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.test{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
-.test header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.test dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:.88rem}
-.test dt{color:var(--muted);white-space:nowrap}
-.test dd{margin:0;min-width:0}
-.test.na{opacity:.75}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;padding:2px 10px;border-radius:999px;white-space:nowrap}
-.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-.p-p{background:var(--ok-soft);color:var(--ok)}
-.p-s{background:var(--warn-soft);color:var(--warn)}
-.p-n{background:var(--sunk);color:var(--muted)}
-.linkbtn{appearance:none;border:0;background:none;color:var(--accent);font:inherit;font-weight:600;padding:0;cursor:pointer;text-align:start}
-.linkbtn:hover{text-decoration:underline}
-
-/* matrix */
-.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
-table{border-collapse:collapse;width:100%;font-size:.88rem}
-th,td{padding:8px 12px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
-tr:last-child td{border-bottom:0}
-thead th{background:var(--sunk);font-weight:600}
-th.cur,td.cur{background:var(--accent-soft)}
-
-/* tabs + panels */
-.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px}
-.tab{appearance:none;font:inherit;font-weight:600;color:var(--muted);background:none;border:1px solid transparent;border-radius:8px;padding:6px 12px;cursor:pointer}
-.tab[aria-selected="true"]{color:var(--accent-ink);background:var(--accent)}
-.panel{display:flex;flex-direction:column;gap:16px;padding-top:14px}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:start}
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin}
+.nav button{appearance:none;font:inherit;font-weight:600;font-size:.92rem;color:var(--muted);background:none;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.nav button .n{font-family:var(--f-mono);font-size:.72rem;opacity:.7}
+.nav button[aria-selected="true"]{color:var(--accent-ink);background:var(--accent)}
+.sec{display:flex;flex-direction:column;gap:18px}
+.sec>header{display:flex;flex-direction:column;gap:6px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;align-items:start}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 label.f{display:flex;flex-direction:column;gap:4px;font-size:.84rem;color:var(--muted);min-width:0}
-input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%;min-width:0}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%;min-width:0}
+textarea{min-height:64px;resize:vertical}
 input[type=number]{font-family:var(--f-mono);direction:ltr;text-align:left}
+input[type=date]{direction:ltr;text-align:left}
 input[type=checkbox]{width:auto}
 .chk{display:flex;gap:8px;align-items:center;font-size:.88rem}
 .btn{appearance:none;font:inherit;font-weight:600;border-radius:8px;padding:8px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:4px 10px;font-size:.84rem}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-
-/* readout */
+.between{justify-content:space-between}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.linkbtn{appearance:none;border:0;background:none;color:var(--accent);font:inherit;font-weight:600;padding:0;cursor:pointer;text-align:start}
+.linkbtn:hover{text-decoration:underline}
+.note{font-size:.84rem;color:var(--muted);border-inline-start:3px solid var(--hazard);padding-inline-start:10px}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:18px;text-align:center;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;padding:2px 10px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.p-p,.lv-ok{background:var(--ok-soft);color:var(--ok)}
+.p-s,.lv-warn{background:var(--warn-soft);color:var(--warn)}
+.lv-bad{background:var(--bad-soft);color:var(--bad)}
+.p-n,.lv-none{background:var(--sunk);color:var(--muted)}
+.lv-bad::before{border-radius:1px;transform:rotate(45deg)}
+.lv-warn::before{border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{padding:8px 12px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}
+tr:last-child td{border-bottom:0}
+thead th{background:var(--sunk);font-weight:600}
+th.cur,td.cur{background:var(--accent-soft)}
+td.wrap{white-space:normal;min-width:220px}
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.eq{appearance:none;text-align:start;font:inherit;color:inherit;background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.eq b{font-family:var(--f-display);font-size:1.05rem}
+.eq span{font-size:.82rem;color:var(--muted)}
+.eq[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.eqnote{background:var(--sunk);border-radius:var(--r);padding:12px 14px;font-size:.92rem}
+.tests{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.test{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.test>header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.test dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:.88rem}
+.test dt{color:var(--muted);white-space:nowrap}
+.test dd{margin:0;min-width:0}
+.test.na{opacity:.72}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start}
+.steps li::before{content:counter(s);font-family:var(--f-mono);font-weight:500;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.steps b{display:block}
+.stests{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.st{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;border-top:4px solid var(--line)}
+.st.ok{border-top-color:var(--ok)} .st.warn{border-top-color:var(--warn)} .st.bad{border-top-color:var(--bad)}
+.st>header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.st .hint{font-size:.8rem;color:var(--muted)}
+.dx{border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-inline-start:6px solid var(--muted)}
+.dx.ok{border-inline-start-color:var(--ok)} .dx.warn{border-inline-start-color:var(--warn)} .dx.bad{border-inline-start-color:var(--bad)}
+.dx .verdict{font-family:var(--f-display);font-size:1.3rem;font-weight:700}
+.dx.ok .verdict{color:var(--ok)} .dx.warn .verdict{color:var(--warn)} .dx.bad .verdict{color:var(--bad)}
+.finding{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding-top:10px;border-top:1px solid var(--line)}
+.finding .pill{grid-row:span 3;align-self:start}
+.finding ul{margin:0;padding-inline-start:18px;font-size:.88rem}
+.stick{position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px)}
 .readout{border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--sunk);border-inline-start:5px solid var(--muted)}
 .readout.ok{border-color:var(--ok)} .readout.warn{border-color:var(--warn)} .readout.bad{border-color:var(--bad)}
 .big{font-family:var(--f-mono);font-size:1.7rem;font-weight:500;direction:ltr;unicode-bidi:isolate;line-height:1.2}
@@ -104,35 +120,45 @@ input[type=checkbox]{width:auto}
 .status{font-weight:600}
 .ok .status{color:var(--ok)} .warn .status{color:var(--warn)} .bad .status{color:var(--bad)}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:.88rem}
-.kv span:nth-child(odd){color:var(--muted)}
+.kv>span:nth-child(odd){color:var(--muted)}
 .flags{display:flex;flex-direction:column;gap:4px;font-size:.86rem;margin:0;padding-inline-start:18px}
-
-/* meter */
 .meter{direction:ltr;display:flex;flex-direction:column;gap:3px}
 .bar{position:relative;height:14px;border-radius:7px;overflow:hidden;display:flex}
 .bar i{display:block;height:100%}
 .bar .z1{background:var(--ok-soft)} .bar .z2{background:var(--warn-soft)} .bar .z3{background:var(--bad-soft)}
+.bar-wrap{position:relative;padding-top:3px}
 .mk{position:absolute;top:-3px;width:3px;height:20px;background:var(--ink);border-radius:2px;transform:translateX(-1.5px)}
 .mk.bgk{background:var(--muted);width:2px;opacity:.8}
-.bar-wrap{position:relative;padding-top:3px}
 .ticks{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
-
-/* calibration */
-.pts{width:100%}
+.subtabs{display:flex;gap:6px;flex-wrap:wrap}
+.subtabs button{appearance:none;font:inherit;font-weight:600;font-size:.88rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer}
+.subtabs button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.stat .v{font-size:1.9rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.assetrow{cursor:pointer} .assetrow:hover td{background:var(--accent-wash)} .assetrow.sel td{background:var(--accent-soft)}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 12px 6px;display:flex;flex-direction:column;gap:4px;min-width:0;position:relative}
+.chart svg{width:100%;height:auto;display:block;direction:ltr;overflow:visible;touch-action:pan-y}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:.8rem;border-radius:6px;padding:5px 8px;white-space:nowrap;transform:translate(-50%,-100%);z-index:2}
+.prpd{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.pcard svg,.diag svg{width:100%;height:auto;display:block;direction:ltr}
+.pcard dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:.86rem}
+.pcard dt{color:var(--muted);white-space:nowrap} .pcard dd{margin:0}
+.diag{background:var(--surface);border-radius:8px;padding:10px}
 .pts td,.pts th{padding:4px 6px;border:0}
 .pts input{padding:5px 8px}
 .calcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.cal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .eqn{font-family:var(--f-mono);direction:ltr;unicode-bidi:isolate;font-size:.86rem;background:var(--sunk);border-radius:6px;padding:6px 8px;overflow-x:auto;white-space:nowrap}
-.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:18px;text-align:center;color:var(--muted)}
-.note{font-size:.84rem;color:var(--muted);border-inline-start:3px solid var(--hazard);padding-inline-start:10px}
-details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
-summary{cursor:pointer;font-weight:600}
-details[open] summary{margin-bottom:12px}
 .thr{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 .thr fieldset{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .thr legend{font-size:.84rem;font-weight:600;padding:0 4px}
-.toast{position:fixed;inset-inline:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));margin:0 auto;max-width:420px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:.9rem;text-align:center}
+details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:12px}
+.toast{position:fixed;inset-inline:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));margin:0 auto;max-width:440px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:.9rem;text-align:center;z-index:9}
+@media (max-width:760px){.stick{position:static}}
 @media (prefers-reduced-motion:no-preference){.mk{transition:left .25s ease}}
 </style>
 
@@ -140,199 +166,260 @@ details[open] summary{margin-bottom:12px}
   <header class="top">
     <div class="hz" aria-hidden="true"></div>
     <h1>حاسبة التفريغ الجزئي الميدانية</h1>
-    <p class="muted">اختر نوع المعدة لتعرف الاختبارات المناسبة لها وأين تضع الحساس، ثم احسب النتيجة. القراءات تتحول إلى pC بالمعايرة الموقعية، أو بتقدير عام تقريبي حيث يوجد.</p>
+    <p class="lede">أداة مسح كاملة للوحات الجهد المتوسط والعالي. تعرف منها أي اختبار يناسب المعدة، وتسجّل قراءات المسح فتحصل على تشخيص يجمع كل الحساسات، وتتابع اتجاه كل لوحة عبر الزمن، وتحدد مكان المصدر، وتحوّل القراءات إلى pC بالمعايرة.</p>
   </header>
 
-  <!-- 1. equipment -->
-  <section style="display:flex;flex-direction:column;gap:12px" aria-labelledby="h-eq">
-    <div class="eyebrow" id="h-eq">نوع المعدة</div>
+  <nav class="nav" role="tablist" id="nav" aria-label="أقسام الأداة"></nav>
+
+  <!-- ===================== 1. GUIDE ===================== -->
+  <section class="sec" id="s-guide" role="tabpanel">
+    <header><h2>الدليل: أي اختبار لأي معدة</h2><p class="lede">اختر نوع المعدة. تظهر الاختبارات مرتبة من الأنسب، مع مكان الحساس وما يكشفه.</p></header>
     <div class="seg" id="eqSeg"></div>
     <div class="eqnote" id="eqNote"></div>
+    <div class="row"><button class="btn pri" id="gStart">ابدأ مسحاً لهذا النوع</button></div>
     <div class="tests" id="tests"></div>
-  </section>
 
-  <!-- 2. matrix -->
-  <section style="display:flex;flex-direction:column;gap:10px" aria-labelledby="h-mx">
-    <h2 id="h-mx">مصفوفة الاختبارات</h2>
+    <h2 style="margin-top:8px">مصفوفة الاختبارات</h2>
     <div class="scroll"><table id="matrix"></table></div>
-    <p class="small muted">أساسي: الأداة الأولى للمسح. مساعد: للتأكيد أو تحديد المكان. غير مناسب: لا يصل إليه الإشعاع أو الصوت.</p>
+    <p class="small muted">أساسي: الأداة الأولى للمسح. مساعد: للتأكيد أو لتحديد المكان. غير مناسب: لا يصل إليه الإشعاع أو الصوت.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>خطوات المسح الميداني</h3>
+        <ol class="steps" id="steps"></ol>
+      </div>
+      <div class="card">
+        <h3>قراءة النتائج معاً (AIS و RMU والكيبل)</h3>
+        <div class="scroll" style="border:0"><table>
+          <thead><tr><th>TEV</th><th>موجات هوائية</th><th>المصدر المرجّح</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill lv-bad">مرتفع</span></td><td><span class="pill lv-none">لا شيء</span></td><td class="wrap">تفريغ <b>داخلي</b> في عزل صلب: CT أو VT، عوازل القضبان، spouts، نهاية كيبل مغلقة.</td></tr>
+            <tr><td><span class="pill lv-none">لا شيء</span></td><td><span class="pill lv-bad">مرتفع</span></td><td class="wrap">تفريغ <b>سطحي</b> أو كورونا: تتبّع على النهايات أو العوازل، رطوبة، تلوث.</td></tr>
+            <tr><td><span class="pill lv-bad">مرتفع</span></td><td><span class="pill lv-bad">مرتفع</span></td><td class="wrap">تفريغ سطحي <b>متقدم</b> بقوة تكفي لتوليد TEV، أو مصدران معاً. أولوية عالية.</td></tr>
+            <tr><td colspan="2">HFCT مرتفع فقط</td><td class="wrap">المصدر غالباً في <b>الكيبل أو الوصلات</b> بعيداً عن اللوحة. حدّد المكان بالانعكاس.</td></tr>
+          </tbody></table></div>
+        <p class="small muted">في GIS: إذا كان UHF والموجات التلامسية مرتفعين معاً فالمصدر غالباً جسيم حر أو جزء طافٍ. وإذا كان UHF وحده مرتفعاً فالأرجح عيب عازل، لأن الفجوات لا تُسمع.</p>
+      </div>
+    </div>
   </section>
 
-  <!-- 3. calculators -->
-  <section aria-labelledby="h-calc" style="display:flex;flex-direction:column;gap:6px">
-    <h2 id="h-calc">الحاسبات</h2>
-    <div class="tabs" role="tablist" id="tabs"></div>
-
-    <!-- TEV -->
-    <div class="panel" role="tabpanel" id="p-tev">
-      <div class="grid2">
-        <div class="card">
-          <h3>قراءة TEV</h3>
-          <div class="fields">
-            <label class="f">القراءة على اللوحة (dBmV)<input type="number" id="tevR" step="0.5" value="24"></label>
-            <label class="f">الخلفية (dBmV)<input type="number" id="tevB" step="0.5" value="11"></label>
-            <label class="f">عدد النبضات / دورة<input type="number" id="tevN" step="1" value="" placeholder="اختياري"></label>
-          </div>
-          <label class="f">التحويل إلى pC<select id="tevCal"></select></label>
-          <p class="note">الخلفية: ضع الحساس على معدن غير متصل بالمعدات (باب، هيكل حديدي بعيد)، وفي الهواء. إذا كانت الخلفية عالية فالقراءة على اللوحة لا يُعتمد عليها.</p>
-        </div>
-        <div class="readout" id="tevOut"></div>
+  <!-- ===================== 2. SURVEY ===================== -->
+  <section class="sec" id="s-survey" role="tabpanel" hidden>
+    <header><h2>المسح الميداني</h2><p class="lede">اختر اللوحة وأدخل قراءات ما قسته فقط. التقييم والتشخيص يتحدّثان مع كل رقم، ويقارنان بالمسح السابق لنفس اللوحة. احفظ في النهاية ليُضاف إلى السجل.</p></header>
+    <div class="card">
+      <div class="fields">
+        <label class="f">اللوحة / الأصل<select id="sAsset"></select></label>
+        <label class="f">نوع المعدة<select id="sEq"></select></label>
+        <label class="f">التاريخ<input type="date" id="sDate"></label>
+        <label class="f">القائم بالمسح<input type="text" id="sBy" placeholder="اختياري"></label>
+        <label class="f">الرطوبة النسبية %<input type="number" id="sHum" step="1" placeholder="اختياري"></label>
+        <label class="f">الحرارة °C<input type="number" id="sTemp" step="0.5" placeholder="اختياري"></label>
+      </div>
+      <div id="naBox" class="fields" hidden style="background:var(--sunk);padding:10px;border-radius:8px">
+        <label class="f">اسم اللوحة الجديدة<input type="text" id="naName" placeholder="مثال: Panel 3 — Feeder B"></label>
+        <label class="f">المحطة / الموقع<input type="text" id="naSite" placeholder="مثال: S/S 33/11 الشمالية"></label>
+        <div class="row" style="align-self:end"><button class="btn pri" id="naAdd">إضافة اللوحة</button><button class="btn" id="naCancel">إلغاء</button></div>
       </div>
     </div>
-
-    <!-- Ultrasonic -->
-    <div class="panel" role="tabpanel" id="p-us" hidden>
-      <div class="grid2">
-        <div class="card">
-          <h3>قراءة الموجات فوق الصوتية</h3>
-          <label class="f">نوع الحساس<select id="usM">
-            <option value="aa">هوائي (AA) عند الفتحات والفواصل</option>
-            <option value="ae">تلامسي (AE) على الغلاف المعدني</option>
-          </select></label>
-          <div class="fields">
-            <label class="f">القراءة (dBµV)<input type="number" id="usR" step="0.5" value="9"></label>
-            <label class="f">الخلفية (dBµV)<input type="number" id="usB" step="0.5" value="-2"></label>
-          </div>
-          <label class="chk"><input type="checkbox" id="usSnd"> سُمع صوت طقطقة أو أزيز في السماعة</label>
-          <p class="note">لا يوجد تحويل معتمد من الموجات فوق الصوتية إلى pC. التقييم يكون بالفرق عن الخلفية، وبطبيعة الصوت، وبتكراره في المسح التالي.</p>
-        </div>
-        <div class="readout" id="usOut"></div>
+    <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+      <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+        <div class="stests" id="sTests"></div>
+        <label class="f">ملاحظات<textarea id="sNotes" placeholder="مثال: صوت طقطقة عند الغطاء الخلفي للكيبل، الطور L2"></textarea></label>
+        <div class="row"><button class="btn pri" id="sSave">حفظ المسح في السجل</button><button class="btn" id="sClear">مسح القراءات</button><span class="small muted" id="sMsg"></span></div>
       </div>
+      <div class="dx stick" id="sDx" aria-live="polite"></div>
     </div>
+  </section>
 
-    <!-- HFCT -->
-    <div class="panel" role="tabpanel" id="p-hfct" hidden>
-      <div class="grid2">
-        <div class="card">
-          <h3>نبضة HFCT</h3>
-          <label class="f">طريقة الحساب<select id="hfM">
-            <option value="k">معامل المقياس k = T<sub>PD</sub>/Z<sub>s</sub></option>
-            <option value="cal">معايرة محفوظة (حقن شحنة)</option>
-          </select></label>
-          <div class="fields" id="hfK">
-            <label class="f">ذروة النبضة (mV)<input type="number" id="hfU" step="any" value="40"></label>
-            <label class="f">Z<sub>s</sub> من الداتاشيت (mV/mA)<input type="number" id="hfZ" step="any" value="15"></label>
-            <label class="f">مدة النبضة المكافئة T<sub>PD</sub> (ns)<input type="number" id="hfT" step="any" value="75"></label>
-          </div>
-          <div class="fields" id="hfC" hidden>
-            <label class="f">القراءة<input type="number" id="hfR" step="any" value="40"></label>
-            <label class="f">المعايرة<select id="hfCal"></select></label>
-          </div>
-          <p class="note">الشحنة هي مساحة نبضة التيار: q = ∫ u/Z<sub>s</sub> dt. معامل k صالح فقط إذا كانت Z<sub>s</sub> ثابتة على نطاق ترددات النبضة. ركّب الحساس على شريط تأريض الشاشة، لا حول الموصل.</p>
-        </div>
-        <div class="readout" id="hfOut"></div>
-      </div>
-    </div>
+  <!-- ===================== 3. LOG ===================== -->
+  <section class="sec" id="s-log" role="tabpanel" hidden>
+    <header><h2>السجل والاتجاه</h2><p class="lede">حالة كل لوحة حسب آخر مسح، ثم تطوّر قراءاتها عبر الزمن. الارتفاع المستمر بين المسوحات أهم من رقم واحد مرتفع.</p></header>
+    <div class="stats" id="lStats"></div>
+    <div class="scroll"><table id="lAssets"></table></div>
+    <div id="lDetail" class="sec" style="gap:12px"></div>
+    <div class="row"><button class="btn" id="lCsv">تصدير السجل CSV</button><span class="small muted" id="lCsvMsg"></span></div>
+  </section>
 
-    <!-- UHF -->
-    <div class="panel" role="tabpanel" id="p-uhf" hidden>
-      <div class="grid2">
-        <div class="card">
-          <h3>قراءة UHF</h3>
-          <label class="f">نوع الإدخال<select id="uhM">
-            <option value="amp">سعة الإشارة (ذروة)</option>
-            <option value="en">طاقة النبضة (pJ)</option>
-          </select></label>
-          <div id="uhA" class="fields">
-            <label class="f">القراءة<input type="number" id="uhR" step="any" value="-52"></label>
-            <label class="f">الوحدة<select id="uhU"><option value="dBm">dBm</option><option value="mV">mV</option><option value="dBmV">dBmV</option></select></label>
-            <label class="f">أرضية الضوضاء (نفس الوحدة)<input type="number" id="uhB" step="any" value="-68"></label>
-          </div>
-          <div id="uhE" class="fields" hidden>
-            <label class="f">طاقة النبضة E (pJ)<input type="number" id="uhEn" step="any" value="1.2"></label>
-          </div>
-          <label class="f">التحويل إلى pC<select id="uhCal"></select></label>
-          <p class="note">UHF لا يعطي pC مباشرة، فالإشارة تتأثر بمكان العيب ونوعه وبمسار الموجة داخل الغلاف. التحويل يحتاج معايرة لنفس الحساس ونفس الموضع. تحقق أولاً من حساسية النظام بحقن نبضة اصطناعية وفق CIGRE TB 654 (ما يكافئ 5 pC). قبل تفسير أي نمط، تأكد أنه ليس من إشارات الجوال أو الواي فاي.</p>
-        </div>
-        <div class="readout" id="uhOut"></div>
-      </div>
-    </div>
+  <!-- ===================== 4. CALCULATORS ===================== -->
+  <section class="sec" id="s-calc" role="tabpanel" hidden>
+    <header><h2>الحاسبات</h2><p class="lede">حسابات تفصيلية لكل حساس، وتحديد مكان المصدر، وتحويل الوحدات.</p></header>
+    <div class="subtabs" id="ctabs" role="tablist"></div>
 
-    <!-- Calibration -->
-    <div class="panel" role="tabpanel" id="p-cal" hidden>
+    <div class="cpanel grid2" id="c-tev">
       <div class="card">
-        <div class="row" style="justify-content:space-between">
-          <h3 id="calTitle">معايرة جديدة</h3>
-          <div class="row">
-            <button class="btn" id="calEx">املأ بمثال</button>
-            <button class="btn" id="calNew">مسح</button>
+        <h3>قراءة TEV</h3>
+        <div class="fields">
+          <label class="f">القراءة على اللوحة (dBmV)<input type="number" id="tevR" step="0.5" value="24"></label>
+          <label class="f">الخلفية (dBmV)<input type="number" id="tevB" step="0.5" value="11"></label>
+          <label class="f">عدد النبضات / دورة<input type="number" id="tevN" step="1" placeholder="اختياري"></label>
+        </div>
+        <label class="f">التحويل إلى pC<select id="tevCal"></select></label>
+        <p class="note">الخلفية: ضع الحساس على معدن غير متصل بالمعدات (باب، هيكل حديدي بعيد)، وفي الهواء. إذا كانت الخلفية عالية فالقراءة على اللوحة لا يُعتمد عليها.</p>
+      </div>
+      <div class="readout" id="tevOut"></div>
+    </div>
+
+    <div class="cpanel grid2" id="c-us" hidden>
+      <div class="card">
+        <h3>قراءة الموجات فوق الصوتية</h3>
+        <label class="f">نوع الحساس<select id="usM"><option value="aa">هوائي (AA) عند الفتحات والفواصل</option><option value="ae">تلامسي (AE) على الغلاف المعدني</option></select></label>
+        <div class="fields">
+          <label class="f">القراءة (dBµV)<input type="number" id="usR" step="0.5" value="9"></label>
+          <label class="f">الخلفية (dBµV)<input type="number" id="usB" step="0.5" value="-2"></label>
+        </div>
+        <label class="chk"><input type="checkbox" id="usSnd"> سُمع صوت طقطقة أو أزيز في السماعة</label>
+        <p class="note">لا يوجد تحويل معتمد من الموجات فوق الصوتية إلى pC. التقييم يكون بالفرق عن الخلفية، وبطبيعة الصوت، وبتكراره في المسح التالي.</p>
+      </div>
+      <div class="readout" id="usOut"></div>
+    </div>
+
+    <div class="cpanel grid2" id="c-hfct" hidden>
+      <div class="card">
+        <h3>نبضة HFCT</h3>
+        <label class="f">طريقة الحساب<select id="hfM"><option value="k">معامل المقياس k = T_PD / Zs</option><option value="cal">معايرة محفوظة (حقن شحنة)</option></select></label>
+        <div class="fields" id="hfK">
+          <label class="f">ذروة النبضة (mV)<input type="number" id="hfU" step="any" value="40"></label>
+          <label class="f">Zs من الداتاشيت (mV/mA)<input type="number" id="hfZ" step="any" value="15"></label>
+          <label class="f">مدة النبضة المكافئة T_PD (ns)<input type="number" id="hfT" step="any" value="75"></label>
+        </div>
+        <div class="fields" id="hfC" hidden>
+          <label class="f">القراءة<input type="number" id="hfR" step="any" value="40"></label>
+          <label class="f">المعايرة<select id="hfCal"></select></label>
+        </div>
+        <p class="note">الشحنة هي مساحة نبضة التيار: q = ∫ u/Zs dt. معامل k صالح فقط إذا كانت Zs ثابتة على نطاق ترددات النبضة. ركّب الحساس على شريط تأريض الشاشة، لا حول الموصل.</p>
+      </div>
+      <div class="readout" id="hfOut"></div>
+    </div>
+
+    <div class="cpanel grid2" id="c-uhf" hidden>
+      <div class="card">
+        <h3>قراءة UHF</h3>
+        <label class="f">نوع الإدخال<select id="uhM"><option value="amp">سعة الإشارة (ذروة)</option><option value="en">طاقة النبضة (pJ)</option></select></label>
+        <div id="uhA" class="fields">
+          <label class="f">القراءة<input type="number" id="uhR" step="any" value="-52"></label>
+          <label class="f">الوحدة<select id="uhU"><option value="dBm">dBm</option><option value="mV">mV</option><option value="dBmV">dBmV</option></select></label>
+          <label class="f">أرضية الضوضاء (نفس الوحدة)<input type="number" id="uhB" step="any" value="-68"></label>
+        </div>
+        <div id="uhE" class="fields" hidden><label class="f">طاقة النبضة E (pJ)<input type="number" id="uhEn" step="any" value="1.2"></label></div>
+        <label class="f">التحويل إلى pC<select id="uhCal"></select></label>
+        <p class="note">UHF لا يعطي pC مباشرة، فالإشارة تتأثر بمكان العيب ونوعه وبمسار الموجة داخل الغلاف. التحويل يحتاج معايرة لنفس الحساس ونفس الموضع. تحقق أولاً من حساسية النظام بحقن نبضة اصطناعية وفق CIGRE TB 654 (ما يكافئ 5 pC).</p>
+      </div>
+      <div class="readout" id="uhOut"></div>
+    </div>
+
+    <div class="cpanel" id="c-loc" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="grid2">
+        <div class="card">
+          <h3>بين حساسين: زمن الوصول</h3>
+          <p class="small muted">حساسان (TEV أو UHF أو HFCT) على جانبي المصدر، وراسم سريع يسجّل الاثنين معاً. الحساس الذي تصله النبضة أولاً هو الأقرب.</p>
+          <div class="fields">
+            <label class="f">الوسط<select id="lMed"><option value="0.30">هواء / GIS ‏(0.30 m/ns)</option><option value="0.17">كيبل XLPE ‏(0.17 m/ns)</option><option value="0.16">كيبل ورقي PILC ‏(0.16 m/ns)</option><option value="c">قيمة أخرى</option></select></label>
+            <label class="f">السرعة (m/ns)<input type="number" id="lV" step="any" value="0.30"></label>
+            <label class="f">المسافة بين الحساسين A و B (m)<input type="number" id="lD" step="any" value="6"></label>
+            <label class="f">Δt = t<sub>B</sub> − t<sub>A</sub> (ns)<input type="number" id="lDt" step="any" value="8"></label>
           </div>
+          <p class="note">Δt موجبة تعني أن A استقبل أولاً. في الهواء كل 1 ns يعادل 30 cm تقريباً، لذلك تحتاج راسماً بمعدل 1 GS/s على الأقل وكابلين بنفس الطول.</p>
+        </div>
+        <div class="readout" id="lOut"></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>داخل الكيبل: الانعكاس من طرف واحد (TDR)</h3>
+          <p class="small muted">HFCT عند الطرف القريب. النبضة تصل مباشرة، ثم تصل نسختها المنعكسة من الطرف البعيد. الفرق الزمني بينهما يحدد المكان.</p>
+          <div class="fields">
+            <label class="f">طول الكيبل L (m)<input type="number" id="tL" step="any" value="850"></label>
+            <label class="f">السرعة v (m/µs)<input type="number" id="tV" step="any" value="170"></label>
+            <label class="f">Δt بين النبضة وانعكاسها (µs)<input type="number" id="tDt" step="any" value="6.2"></label>
+          </div>
+          <details><summary class="small">معايرة السرعة من زمن الذهاب والعودة</summary>
+            <div class="fields" style="margin-top:8px"><label class="f">زمن الذهاب والعودة لنبضة محقونة T (µs)<input type="number" id="tT" step="any" placeholder="مثال: 10"></label></div>
+            <p class="small muted" id="tVout" style="margin-top:6px"></p>
+          </details>
+        </div>
+        <div class="readout" id="tOut"></div>
+      </div>
+    </div>
+
+    <div class="cpanel grid2" id="c-units" hidden>
+      <div class="card">
+        <h3>تحويل الوحدات</h3>
+        <div class="fields">
+          <label class="f">dBmV<input type="number" id="uDbmv" step="any" value="20"></label>
+          <label class="f">mV<input type="number" id="uMv" step="any"></label>
+          <label class="f">dBµV<input type="number" id="uDbuv" step="any"></label>
         </div>
         <div class="fields">
-          <label class="f">اسم اللوحة أو المعدة<input type="text" id="cName" placeholder="مثال: Panel 3 — Feeder B"></label>
-          <label class="f">الموقع / المحطة<input type="text" id="cSite" placeholder="اختياري"></label>
-          <label class="f">نوع المعدة<select id="cEq"></select></label>
-          <label class="f">الحساس<select id="cSen"><option value="tev">TEV</option><option value="hfct">HFCT</option><option value="uhf">UHF</option></select></label>
-          <label class="f">نوع العلاقة<select id="cKind"><option value="amp">سعة: reading = a + b·20log(q)</option><option value="energy">طاقة UHF: E = c·q²</option></select></label>
-          <label class="f" id="cUnitL">وحدة القراءة<select id="cUnit"><option>dBmV</option><option>dBm</option><option>mV</option></select></label>
+          <label class="f">dBm (على 50 Ω)<input type="number" id="uDbm" step="any" value="-40"></label>
+          <label class="f">mV RMS<input type="number" id="uDbmMv" step="any"></label>
         </div>
-        <label class="chk" id="cForceL"><input type="checkbox" id="cForce"> افرض تناسباً خطياً (b = 1)</label>
-        <div class="scroll" style="border:0;background:none">
-          <table class="pts"><thead><tr><th>الشحنة المحقونة (pC)</th><th id="cYh">القراءة</th><th></th></tr></thead><tbody id="cPts"></tbody></table>
-        </div>
-        <div class="row"><button class="btn" id="cAdd">+ نقطة</button></div>
-        <div id="cFit" class="readout"></div>
-        <div class="row">
-          <button class="btn pri" id="cSave">حفظ المعايرة</button>
-          <span class="small muted" id="cSaveMsg"></span>
-        </div>
-        <p class="note">احقن شحنات معلومة من الكاليبريتر عند نهاية الكيبل أو البوشنج، وغطِّ المدى المتوقع (مثلاً 50 إلى 5000 pC). سجّل القراءة في نفس الموضع الذي ستقيس منه لاحقاً. كلما زاد عدد النقاط ضاق المجال.</p>
+        <p class="small muted">dBmV منسوبة إلى 1 mV. ‏dBµV − 60 = dBmV. ‏dBm قدرة منسوبة إلى 1 mW على حمل 50 Ω.</p>
       </div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="row" style="justify-content:space-between"><h3>المعايرات المحفوظة</h3><span class="small muted" id="dbState"></span></div>
-        <div class="calcards" id="calList"></div>
-      </div>
-    </div>
-
-    <!-- Units -->
-    <div class="panel" role="tabpanel" id="p-units" hidden>
-      <div class="grid2">
-        <div class="card">
-          <h3>تحويل الوحدات</h3>
-          <div class="fields">
-            <label class="f">dBmV<input type="number" id="uDbmv" step="any" value="20"></label>
-            <label class="f">mV<input type="number" id="uMv" step="any"></label>
-            <label class="f">dBµV<input type="number" id="uDbuv" step="any"></label>
-          </div>
-          <div class="fields">
-            <label class="f">dBm (على 50 Ω)<input type="number" id="uDbm" step="any" value="-40"></label>
-            <label class="f">mV RMS<input type="number" id="uDbmMv" step="any"></label>
-          </div>
-          <p class="small muted">dBmV منسوبة إلى 1 mV. ‏dBµV − 60 = dBmV. ‏dBm قدرة منسوبة إلى 1 mW على حمل 50 Ω.</p>
+      <div class="card">
+        <h3>IEC 60270: دائرة القياس التقليدية</h3>
+        <div class="fields">
+          <label class="f">q (pC)<input type="number" id="iQ" step="any" value="100"></label>
+          <label class="f">f₁ (kHz)<input type="number" id="iF1" step="any" value="100"></label>
+          <label class="f">f₂ (kHz)<input type="number" id="iF2" step="any" value="400"></label>
+          <label class="f">Zm (Ω)<input type="number" id="iZ" step="any" value="1000"></label>
         </div>
-        <div class="card">
-          <h3>IEC 60270 — دائرة القياس التقليدية</h3>
-          <div class="fields">
-            <label class="f">q (pC)<input type="number" id="iQ" step="any" value="100"></label>
-            <label class="f">f₁ (kHz)<input type="number" id="iF1" step="any" value="100"></label>
-            <label class="f">f₂ (kHz)<input type="number" id="iF2" step="any" value="400"></label>
-            <label class="f">Z<sub>m</sub> (Ω)<input type="number" id="iZ" step="any" value="1000"></label>
-          </div>
-          <div class="kv"><span>ذروة الخرج u = 2(f₂−f₁)·Z<sub>m</sub>·q</span><span class="num" id="iOut"></span></div>
-          <hr style="border:0;border-top:1px solid var(--line);width:100%;margin:0">
-          <div class="fields">
-            <label class="f">C (nF)<input type="number" id="qC" step="any" value="1"></label>
-            <label class="f">ΔV (mV)<input type="number" id="qV" step="any" value="10"></label>
-          </div>
-          <div class="kv"><span>الشحنة الظاهرية q = C·ΔV</span><span class="num" id="qOut"></span></div>
+        <div class="kv"><span>ذروة الخرج u = 2(f₂−f₁)·Zm·q</span><span class="num" id="iOut"></span></div>
+        <hr style="border:0;border-top:1px solid var(--line);width:100%;margin:0">
+        <div class="fields">
+          <label class="f">C (nF)<input type="number" id="qC" step="any" value="1"></label>
+          <label class="f">ΔV (mV)<input type="number" id="qV" step="any" value="10"></label>
         </div>
+        <div class="kv"><span>الشحنة الظاهرية q = C·ΔV</span><span class="num" id="qOut"></span></div>
       </div>
     </div>
   </section>
 
-  <details id="thrBox">
-    <summary>حدود التقييم (اضبطها حسب معيار شركتك)</summary>
-    <div class="thr" id="thrGrid"></div>
-    <div class="row" style="margin-top:12px"><button class="btn pri" id="thrSave">حفظ الحدود</button><button class="btn" id="thrReset">القيم الافتراضية</button><span class="small muted" id="thrMsg"></span></div>
-    <p class="note" style="margin-top:10px">الحدود الافتراضية إرشادية، وتختلف بين الشركات والمصنّعين وأنواع المعدات. حدود TEV ‏(20 و30 dBmV) شائعة في المسوحات اليدوية. باقي الحدود نقطة بداية فقط. الاتجاه عبر المسوحات المتتالية أهم من رقم واحد.</p>
-  </details>
+  <!-- ===================== 5. PRPD ===================== -->
+  <section class="sec" id="s-prpd" role="tabpanel" hidden>
+    <header><h2>أنماط PRPD</h2><p class="lede">نمط التفريغ بالنسبة لطور الجهد (Phase-Resolved PD) هو الطريقة الأوضح لمعرفة نوع العيب. كل نقطة نبضة: موضعها الأفقي طور الجهد لحظة حدوثها، وارتفاعها سعتها وقطبيتها. الأشكال توضيحية مبسطة، فقارن بها شكل الجهاز ولا تطابقها حرفياً.</p></header>
+    <div class="prpd" id="prpd"></div>
+  </section>
 
-  <p class="small muted">التقدير العام لـ TEV مبني على ميل ≈ 1 µV/pC (Reid, Judd &amp; Duncan, 2012). خطؤه قد يصل إلى عشرة أضعاف، فلا يصلح وحده لقرار تشغيلي.</p>
+  <!-- ===================== 6. CALIBRATION ===================== -->
+  <section class="sec" id="s-cal" role="tabpanel" hidden>
+    <header><h2>المعايرة والإعدادات</h2><p class="lede">المعايرة تربط قراءة الحساس بالشحنة الحقيقية لنفس اللوحة ونفس موضع الحساس. بعد حفظها تظهر في الحاسبات، فتتحول كل قراءة لاحقة إلى pC مع مجال ثقة 95%.</p></header>
+    <div class="card">
+      <div class="row between">
+        <h3 id="calTitle">معايرة جديدة</h3>
+        <div class="row"><button class="btn sm" id="calEx">املأ بمثال</button><button class="btn sm" id="calNew">مسح</button></div>
+      </div>
+      <div class="fields">
+        <label class="f">اسم اللوحة أو المعدة<input type="text" id="cName" placeholder="مثال: Panel 3 — Feeder B"></label>
+        <label class="f">الموقع / المحطة<input type="text" id="cSite" placeholder="اختياري"></label>
+        <label class="f">نوع المعدة<select id="cEq"></select></label>
+        <label class="f">الحساس<select id="cSen"><option value="tev">TEV</option><option value="hfct">HFCT</option><option value="uhf">UHF</option></select></label>
+        <label class="f">نوع العلاقة<select id="cKind"><option value="amp">سعة: reading = a + b·20log(q)</option><option value="energy">طاقة UHF: E = c·q²</option></select></label>
+        <label class="f" id="cUnitL">وحدة القراءة<select id="cUnit"><option>dBmV</option><option>dBm</option><option>mV</option></select></label>
+      </div>
+      <label class="chk" id="cForceL"><input type="checkbox" id="cForce"> افرض تناسباً خطياً (b = 1)</label>
+      <div class="scroll" style="border:0;background:none">
+        <table class="pts"><thead><tr><th>الشحنة المحقونة (pC)</th><th id="cYh">القراءة</th><th></th></tr></thead><tbody id="cPts"></tbody></table>
+      </div>
+      <div class="row"><button class="btn sm" id="cAdd">+ نقطة</button></div>
+      <div id="cFit" class="readout"></div>
+      <div class="row"><button class="btn pri" id="cSave">حفظ المعايرة</button><span class="small muted" id="cSaveMsg"></span></div>
+      <p class="note">احقن شحنات معلومة من الكاليبريتر عند نهاية الكيبل أو البوشنج، وغطِّ المدى المتوقع (مثلاً 50 إلى 5000 pC). سجّل القراءة في نفس الموضع الذي ستقيس منه لاحقاً. كلما زاد عدد النقاط ضاق المجال.</p>
+    </div>
+    <div class="row between"><h3>المعايرات المحفوظة</h3><span class="small muted" id="dbState"></span></div>
+    <div class="calcards" id="calList"></div>
+
+    <details id="thrBox" open>
+      <summary>حدود التقييم (اضبطها حسب معيار شركتك)</summary>
+      <div class="thr" id="thrGrid"></div>
+      <div class="row" style="margin-top:12px"><button class="btn pri" id="thrSave">حفظ الحدود</button><button class="btn" id="thrReset">القيم الافتراضية</button><span class="small muted" id="thrMsg"></span></div>
+      <p class="note" style="margin-top:10px">الحدود الافتراضية إرشادية، وتختلف بين الشركات والمصنّعين وأنواع المعدات. حدود TEV ‏(20 و30 dBmV) شائعة في المسوحات اليدوية. باقي الحدود نقطة بداية فقط. التقييم في المسح والسجل يُعاد حسابه بالحدود الحالية.</p>
+    </details>
+    <p class="small muted">التقدير العام لـ TEV مبني على ميل ≈ 1 µV/pC (Reid, Judd &amp; Duncan, 2012). خطؤه قد يصل إلى عشرة أضعاف، فلا يصلح وحده لقرار تشغيلي.</p>
+  </section>
 </div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
-/* ---------- math (port of pd_conversion.py) ---------- */
+/* ================= math (port of pd_conversion.py) ================= */
 const L10=Math.log10;
 const dbmvToMv=d=>10**(d/20), mvToDbmv=m=>20*L10(m), dbuvToDbmv=d=>d-60;
 const dbmToMv=(d,R=50)=>Math.sqrt(1e-3*10**(d/10)*R)*1e3;
@@ -385,32 +472,30 @@ function fitEnergy(pts){
   const Em=E.reduce((s,v)=>s+v,0)/E.length,ssr=E.reduce((s,v,i)=>s+(v-c*q2[i])**2,0),sst=E.reduce((s,v)=>s+(v-Em)**2,0);
   return{c,r2:sst>0?1-ssr/sst:NaN,n:pts.length};
 }
+/* localization */
+function tofTwo(d,v,dt){const x=(d-v*dt)/2;return{x,outside:Math.abs(v*dt)>=d,first:dt>0?'A':dt<0?'B':'='}}
+function tdrOne(L,v,dt){const fromFar=v*dt/2;return{near:L-fromFar,far:fromFar,valid:dt>=0&&fromFar<=L}}
 
-/* ---------- formatting ---------- */
+/* ================= helpers ================= */
 const $=id=>document.getElementById(id);
 const nf=(v,d=0)=>Number.isFinite(v)?v.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}):'—';
 const pc=v=>!Number.isFinite(v)?'—':v>=100?nf(v,0):v>=10?nf(v,1):nf(v,2);
 const num=id=>{const v=$(id).value.trim();return v===''?NaN:Number(v)};
+const nn=id=>{const v=num(id);return Number.isFinite(v)?v:null};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600)}
+const fin=v=>v!==null&&v!==undefined&&Number.isFinite(v);
+const sgn=v=>(v>=0?'+':'')+nf(v,1);
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2800)}
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmtDate=s=>{if(!s)return'—';const [y,m,d]=s.split('-');return `${d}/${m}/${y}`};
 
-/* ---------- domain content ---------- */
+/* ================= domain content ================= */
 const TESTS={
-  tev:{name:'TEV',full:'الجهد الأرضي العابر',unit:'dBmV',tab:'tev',
-    finds:'تفريغ داخلي: فجوات في عزل CT/VT، عوازل القضبان، الـ spouts، العزل الصلب.',
-    pc:'تقدير عام (±10×) أو معايرة موقعية'},
-  aa:{name:'AA',full:'موجات فوق صوتية هوائية',unit:'dBµV',tab:'us',
-    finds:'تفريغ سطحي، تتبّع (tracking)، كورونا، رطوبة وتلوث على العوازل ونهايات الكيبل.',
-    pc:'لا يوجد. تقييم بالفرق عن الخلفية والصوت'},
-  ae:{name:'AE',full:'موجات فوق صوتية تلامسية',unit:'dBµV',tab:'us',
-    finds:'جسيمات حرة، أجزاء طافية (floating)، اهتزاز ميكانيكي داخل الغلاف.',
-    pc:'لا يوجد. تقييم بالفرق عن الخلفية والنمط'},
-  hfct:{name:'HFCT',full:'محوّل تيار عالي التردد',unit:'mV → pC',tab:'hfct',
-    finds:'تفريغ في نهايات الكيبل والوصلات والكيبل نفسه.',
-    pc:'مباشر بالتكامل أو بمعامل k، أو بالمعايرة'},
-  uhf:{name:'UHF',full:'ترددات فائقة 300–3000 MHz',unit:'dBm / mV',tab:'uhf',
-    finds:'نتوءات، أجزاء طافية، جسيمات، فجوات في العوازل (spacers)، وتحديد المكان بزمن الوصول.',
-    pc:'بالمعايرة فقط (سعة أو طاقة E = c·q²)'}
+  tev:{name:'TEV',full:'الجهد الأرضي العابر',unit:'dBmV',tab:'tev',finds:'تفريغ داخلي: فجوات في عزل CT/VT، عوازل القضبان، الـ spouts، العزل الصلب.',pc:'تقدير عام (±10×) أو معايرة موقعية'},
+  aa:{name:'AA',full:'موجات فوق صوتية هوائية',unit:'dBµV',tab:'us',finds:'تفريغ سطحي، تتبّع (tracking)، كورونا، رطوبة وتلوث على العوازل ونهايات الكيبل.',pc:'لا يوجد. تقييم بالفرق عن الخلفية والصوت'},
+  ae:{name:'AE',full:'موجات فوق صوتية تلامسية',unit:'dBµV',tab:'us',finds:'جسيمات حرة، أجزاء طافية (floating)، اهتزاز ميكانيكي داخل الغلاف.',pc:'لا يوجد. تقييم بالفرق عن الخلفية والنمط'},
+  hfct:{name:'HFCT',full:'محوّل تيار عالي التردد',unit:'pC',tab:'hfct',finds:'تفريغ في نهايات الكيبل والوصلات والكيبل نفسه.',pc:'مباشر بالتكامل أو بمعامل k، أو بالمعايرة'},
+  uhf:{name:'UHF',full:'ترددات فائقة 300–3000 MHz',unit:'dBm',tab:'uhf',finds:'نتوءات، أجزاء طافية، جسيمات، فجوات في العوازل (spacers)، وتحديد المكان بزمن الوصول.',pc:'بالمعايرة فقط (سعة أو طاقة E = c·q²)'}
 };
 const ORDER=['tev','aa','ae','hfct','uhf'];
 const EQ={
@@ -448,15 +533,60 @@ const EQ={
        uhf:'حساس خارجي قريب من النهاية، لتأكيد أن المصدر في النهاية وليس في اللوحة.'}}
 };
 const SUIT={p:['أساسي','p-p'],s:['مساعد','p-s'],n:['غير مناسب','p-n']};
+const STEPS=[
+  ['السلامة أولاً','لا تفتح أي باب أو غطاء تحت الجهد، والتزم بمسافة الاقتراب ومعدات الحماية. إذا كان هناك صوت تفريغ مسموع بالأذن أو رائحة أوزون، فابتعد وأبلغ قبل أي قياس.'],
+  ['سجّل الظروف','الرطوبة والحرارة والحمل. التفريغ السطحي يزيد كثيراً مع الرطوبة، فقراءة اليوم الرطب لا تُقارن مباشرة بقراءة اليوم الجاف.'],
+  ['قِس الخلفية','TEV على معدن غير متصل بالمعدات وفي الهواء. الموجات الهوائية في الغرفة بعيداً عن اللوحات. UHF أرضية الضوضاء بنفس إعدادات الجهاز.'],
+  ['امسح كل لوحة','TEV أمام وخلف كل لوحة، والموجات الهوائية على كل فاصل وفتحة، و HFCT على كيبلات اللوحة. اكتب القراءات ولو كانت منخفضة، فهي مرجع المسح القادم.'],
+  ['أكّد بحساس ثانٍ','أي مؤشر مرتفع يُؤكَّد بحساس من نوع آخر، وقارن بالجدول في هذا القسم لتعرف نوع المصدر: داخلي أو سطحي أو في الكيبل.'],
+  ['حدّد المكان','أعلى قراءة بين اللوحات المتجاورة، ثم فرق زمن الوصول بين حساسين، أو الانعكاس داخل الكيبل. الحاسبات في قسم «الحاسبات».'],
+  ['احفظ وقارن','احفظ المسح في السجل. الارتفاع المستمر بين المسوحات هو أوضح دليل على أن العيب يتطور.']
+];
+const PRPD=[
+  {k:'void',name:'فجوة داخلية (Void)',where:'داخل العزل الصلب: CT و VT، العوازل الإيبوكسية، spouts، نهايات وكيبلات بها فراغات.',
+   shape:'مجموعتان شبه متماثلتين على الجزء الصاعد من كل نصف موجة (0–90° و 180–270°)، بسعة متقاربة في القطبين.',
+   sens:'TEV، HFCT، UHF. لا تُسمع غالباً بالموجات فوق الصوتية.',risk:'عالية: تأكل العزل من الداخل حتى الانهيار، ولا تظهر بالفحص النظري.',act:'أكّد وحدّد المكان، وتابع الاتجاه بفترات قصيرة، وخطط للاستبدال.'},
+  {k:'surface',name:'تفريغ سطحي / تتبّع',where:'على أسطح العوازل ونهايات الكيبل، خاصة مع الرطوبة والتلوث.',
+   shape:'مجموعات في نفس الأرباع لكن غير متماثلة: قطبية أكبر من الأخرى، وانتشار أوسع في الطور.',
+   sens:'الموجات الهوائية (طقطقة)، TEV إذا اشتد، HFCT.',risk:'متوسطة إلى عالية: يترك مسارات كربونية ويتطور مع الرطوبة.',act:'فحص نظري وتنظيف عند الإطفاء، وتحقق من السخانات والتهوية والرطوبة.'},
+  {k:'corona',name:'كورونا',where:'نقاط حادة على الموصلات أو الأرضي في الهواء.',
+   shape:'نبضات صغيرة متساوية تقريباً حول قمة النصف السالب (≈270°). عند جهد أعلى تظهر نبضات أكبر عند القمة الموجبة.',
+   sens:'الموجات الهوائية (أزيز مستمر)، UHF ضعيف.',risk:'منخفضة غالباً في الهواء، لكنها تنتج أوزون وأحماض تؤذي العزل مع الوقت.',act:'حدّد الجسم الحاد وعالجه عند الإطفاء.'},
+  {k:'float',name:'جزء طافٍ (Floating)',where:'جزء معدني غير موصّل جيداً بالجهد أو بالأرضي: درع، مسمار، حلقة.',
+   shape:'نبضات كبيرة بسعة ثابتة تقريباً على شكل خطوط أفقية، في نصفي الموجة، وعددها قليل.',
+   sens:'UHF قوي، AE بنمط 100 Hz، TEV.',risk:'متوسطة إلى عالية: يؤدي إلى تآكل وتحلل الغاز، وقد يتطور.',act:'تحقق من التوصيلات والعزم عند الإطفاء.'},
+  {k:'particle',name:'جسيمات حرة (GIS)',where:'جسيمات معدنية تتحرك داخل حجرة الغاز.',
+   shape:'نبضات موزعة عشوائياً على كامل الطور بسعات متفاوتة، وتأتي وتختفي.',
+   sens:'AE قوي جداً (ارتداد)، UHF.',risk:'عالية في GIS: الجسيم قد يقفز إلى سطح العازل ويسبب وميضاً.',act:'تأكد بالموجات التلامسية، وحدد الحجرة، وخطط لفتحها وتنظيفها.'},
+  {k:'noise',name:'ضوضاء وتداخل (ليس تفريغاً)',where:'إشارات اتصالات، مفاتيح إلكترونية (thyristor)، محركات، إضاءة.',
+   shape:'شريط أفقي ثابت على كل الأطوار، أو خطوط رأسية عند طور ثابت لا تتبع شكل الموجة.',
+   sens:'كل الحساسات.',risk:'لا يوجد، لكنها قد تخفي تفريغاً حقيقياً أو تُقرأ خطأً كتفريغ.',act:'قارن بالخلفية، واستخدم المرشحات، وغيّر موضع الحساس.'}
+];
+const PATS=[['','—'],['void','فجوة داخلية'],['surface','سطحي / تتبّع'],['corona','كورونا'],['float','جزء طافٍ'],['particle','جسيمات حرة'],['noise','ضوضاء / ليس تفريغاً'],['unclear','غير واضح']];
 
 /* thresholds */
 const DEF={tevA:20,tevR:30,tevBg:20,usA:3,usR:8,hfA:500,hfR:2500,uhA:6,uhR:15};
 let thr={...DEF};
+const level=(v,a,r)=>!fin(v)?null:v>=r?'bad':v>=a?'warn':'ok';
+const LVN={ok:'منخفض',warn:'متوسط',bad:'مرتفع'};
+const worst=arr=>arr.includes('bad')?'bad':arr.includes('warn')?'warn':arr.includes('ok')?'ok':null;
+const pill=l=>l?`<span class="pill lv-${l}">${LVN[l]}</span>`:'<span class="pill lv-none">لم يُقس</span>';
 
-/* ---------- equipment + matrix ---------- */
+/* ================= NAV ================= */
+const SECS=[['guide','الدليل'],['survey','المسح'],['log','السجل'],['calc','الحاسبات'],['prpd','أنماط PRPD'],['cal','المعايرة والإعدادات']];
+$('nav').innerHTML=SECS.map(([k,n],i)=>`<button role="tab" id="n-${k}" aria-controls="s-${k}" data-s="${k}"><span class="n">${i+1}</span>${n}</button>`).join('');
+function showSec(k,scroll){
+  SECS.forEach(([s])=>{$('s-'+s).hidden=s!==k;$('n-'+s).setAttribute('aria-selected',s===k)});
+  try{localStorage.setItem('pd.sec',k)}catch(e){}
+  if(k==='log')renderLog();
+  if(scroll)$('nav').scrollIntoView({block:'start'});
+}
+$('nav').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b)showSec(b.dataset.s,true)});
+
+/* ================= GUIDE ================= */
 let eq='ais';
 function renderEq(){
-  $('eqSeg').innerHTML=Object.entries(EQ).map(([k,e])=>`<button class="eq" data-eq="${k}" aria-pressed="${k===eq}"><b>${e.name} <span style="display:inline">· ${e.ar}</span></b><span>${e.sub}</span></button>`).join('');
+  $('eqSeg').innerHTML=Object.entries(EQ).map(([k,e])=>`<button class="eq" data-eq="${k}" aria-pressed="${k===eq}"><b>${e.name} · ${e.ar}</b><span>${e.sub}</span></button>`).join('');
   const e=EQ[eq];
   $('eqNote').textContent=e.note;
   const sorted=[...ORDER].sort((a,b)=>'psn'.indexOf(e.t[a])-'psn'.indexOf(e.t[b]));
@@ -464,153 +594,394 @@ function renderEq(){
     <article class="test ${e.t[k]==='n'?'na':''}">
       <header><h3>${T.name} <span class="muted small" style="font-weight:400">${T.full}</span></h3><span class="pill ${s[1]}">${s[0]}</span></header>
       <dl><dt>أين</dt><dd>${e.w[k]}</dd><dt>يكشف</dt><dd>${T.finds}</dd><dt>الوحدة</dt><dd class="mono" style="text-align:right">${T.unit}</dd><dt>إلى pC</dt><dd>${T.pc}</dd></dl>
-      ${e.t[k]!=='n'?`<button class="linkbtn" data-go="${T.tab}" data-us="${k==='ae'?'ae':k==='aa'?'aa':''}">افتح حاسبة ${T.name} ←</button>`:''}
+      ${e.t[k]!=='n'?`<button class="linkbtn" data-go="${T.tab}" data-us="${k==='ae'||k==='aa'?k:''}">افتح حاسبة ${T.name} ←</button>`:''}
     </article>`}).join('');
   $('matrix').innerHTML=`<thead><tr><th>الاختبار</th>${Object.entries(EQ).map(([k,x])=>`<th class="${k===eq?'cur':''}">${x.name}</th>`).join('')}</tr></thead><tbody>${
     ORDER.map(t=>`<tr><td><b>${TESTS[t].name}</b> <span class="muted">${TESTS[t].full}</span></td>${Object.entries(EQ).map(([k,x])=>{const s=SUIT[x.t[t]];return`<td class="${k===eq?'cur':''}"><span class="pill ${s[1]}">${s[0]}</span></td>`}).join('')}</tr>`).join('')}</tbody>`;
 }
-$('eqSeg').addEventListener('click',ev=>{const b=ev.target.closest('[data-eq]');if(!b)return;eq=b.dataset.eq;renderEq();const ce=$('cEq');if(!editingId)ce.value=eq});
-$('tests').addEventListener('click',ev=>{const b=ev.target.closest('[data-go]');if(!b)return;if(b.dataset.us){$('usM').value=b.dataset.us;calcUs()}showTab(b.dataset.go);$('tabs').scrollIntoView({behavior:'smooth',block:'start'})});
+$('steps').innerHTML=STEPS.map(([t,d])=>`<li><div><b>${t}</b><span class="small muted">${d}</span></div></li>`).join('');
+$('eqSeg').addEventListener('click',ev=>{const b=ev.target.closest('[data-eq]');if(!b)return;eq=b.dataset.eq;renderEq()});
+$('tests').addEventListener('click',ev=>{const b=ev.target.closest('[data-go]');if(!b)return;if(b.dataset.us){$('usM').value=b.dataset.us;calcUs()}showCalc(b.dataset.go);showSec('calc',true)});
+$('gStart').onclick=()=>{$('sAsset').value='';$('naBox').hidden=true;$('sEq').value=eq;renderSurveyCards();calcSurvey();showSec('survey',true)};
 
-/* ---------- tabs ---------- */
-const TABS=[['tev','TEV'],['us','موجات فوق صوتية'],['hfct','HFCT'],['uhf','UHF'],['cal','المعايرة'],['units','الوحدات و IEC 60270']];
-$('tabs').innerHTML=TABS.map(([k,n])=>`<button class="tab" role="tab" id="t-${k}" aria-controls="p-${k}" data-t="${k}">${n}</button>`).join('');
-function showTab(k){TABS.forEach(([t])=>{$('p-'+t).hidden=t!==k;$('t-'+t).setAttribute('aria-selected',t===k)});try{localStorage.setItem('pd.tab',k)}catch(e){}}
-$('tabs').addEventListener('click',ev=>{const b=ev.target.closest('[data-t]');if(b)showTab(b.dataset.t)});
-
-/* ---------- meter + readout ---------- */
+/* ================= meter / readout ================= */
 function meter({min,max,a,r,v,bg,unit}){
   const span=max-min,p=x=>Math.min(100,Math.max(0,(x-min)/span*100));
-  const ticks=[min,a,r,max];
   return`<div class="meter"><div class="bar-wrap"><div class="bar"><i class="z1" style="width:${p(a)}%"></i><i class="z2" style="width:${p(r)-p(a)}%"></i><i class="z3" style="width:${100-p(r)}%"></i></div>
-    ${Number.isFinite(bg)?`<span class="mk bgk" style="left:${p(bg)}%" title="الخلفية"></span>`:''}
-    ${Number.isFinite(v)?`<span class="mk" style="left:${p(v)}%"></span>`:''}</div>
-    <div class="ticks">${ticks.map(t=>`<span>${nf(t,t%1?1:0)}</span>`).join('')}</div>
-    <div class="ticks" style="justify-content:flex-start;gap:12px"><span>▮ القراءة</span>${Number.isFinite(bg)?'<span style="opacity:.8">▮ الخلفية</span>':''}<span>${unit}</span></div></div>`;
+    ${fin(bg)?`<span class="mk bgk" style="left:${p(bg)}%" title="الخلفية"></span>`:''}
+    ${fin(v)?`<span class="mk" style="left:${p(v)}%"></span>`:''}</div>
+    <div class="ticks">${[min,a,r,max].map(t=>`<span>${nf(t,t%1?1:0)}</span>`).join('')}</div>
+    <div class="ticks" style="justify-content:flex-start;gap:12px"><span>▮ القراءة</span>${fin(bg)?'<span style="opacity:.8">▮ الخلفية</span>':''}<span>${unit}</span></div></div>`;
 }
-const level=(v,a,r)=>!Number.isFinite(v)?'':v>=r?'bad':v>=a?'warn':'ok';
 const LVL={ok:'منخفض: سجّل القراءة وتابع في المسح الدوري',warn:'متوسط: أعد القياس قريباً وحدّد المكان بحساس آخر',bad:'مرتفع: يحتاج تحقيقاً وتخطيطاً للإجراء'};
-function readout(el,cls,html){el.className='readout '+cls;el.innerHTML=html}
+function readout(el,cls,html){el.className='readout '+(cls||'');el.innerHTML=html}
 
-/* ---------- TEV ---------- */
+/* ================= SURVEY ================= */
+let assets=[],surveys=[],cals=[],db=null,canWrite=true,dl=null;
+let pendingAsset=null,editingSurvey=null;
+$('sEq').innerHTML=Object.entries(EQ).map(([k,e])=>`<option value="${k}">${e.name} — ${e.ar}</option>`).join('');
+$('sDate').value=today();
+const PATSEL=id=>`<label class="f">نمط PRPD (إن ظهر)<select id="${id}">${PATS.map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select></label>`;
+const SCARD={
+  tev:`<div class="fields"><label class="f">أمام (dBmV)<input type="number" step="0.5" id="s-tev-f"></label><label class="f">خلف (dBmV)<input type="number" step="0.5" id="s-tev-b"></label><label class="f">الخلفية (dBmV)<input type="number" step="0.5" id="s-tev-bg"></label><label class="f">نبضات / دورة<input type="number" step="1" id="s-tev-n"></label></div>`,
+  aa:`<div class="fields"><label class="f">القراءة (dBµV)<input type="number" step="0.5" id="s-aa-r"></label><label class="f">الخلفية (dBµV)<input type="number" step="0.5" id="s-aa-bg"></label></div><label class="chk"><input type="checkbox" id="s-aa-snd"> سُمع صوت طقطقة أو أزيز</label>`,
+  ae:`<div class="fields"><label class="f">القراءة (dBµV)<input type="number" step="0.5" id="s-ae-r"></label><label class="f">الخلفية (dBµV)<input type="number" step="0.5" id="s-ae-bg"></label></div><label class="f">طبيعة الإشارة<select id="s-ae-pat"><option value="">—</option><option value="random">نبضات عشوائية (ارتداد جسيمات)</option><option value="100hz">نمط منتظم 100 Hz</option><option value="none">لا شيء مميز</option></select></label>`,
+  hfct:`<div class="fields"><label class="f">L1 (pC)<input type="number" step="any" id="s-hf-1"></label><label class="f">L2 (pC)<input type="number" step="any" id="s-hf-2"></label><label class="f">L3 (pC)<input type="number" step="any" id="s-hf-3"></label></div>${PATSEL('s-hf-pat')}<p class="hint">أدخل pC كما يعطيها الجهاز. لديك mV فقط؟ احسبها من «الحاسبات ← HFCT».</p>`,
+  uhf:`<div class="fields"><label class="f">القراءة (dBm)<input type="number" step="any" id="s-uh-r"></label><label class="f">أرضية الضوضاء (dBm)<input type="number" step="any" id="s-uh-bg"></label></div>${PATSEL('s-uh-pat')}`
+};
+$('sTests').innerHTML=ORDER.map(k=>`<article class="st" id="st-${k}"><header><h3>${TESTS[k].name} <span class="muted small" style="font-weight:400">${TESTS[k].full}</span></h3><span id="stl-${k}"></span></header><p class="hint" id="stw-${k}"></p>${SCARD[k]}<p class="small" id="sto-${k}"></p></article>`).join('');
+function renderSurveyCards(){
+  const e=EQ[$('sEq').value];
+  ORDER.forEach(k=>{const c=$('st-'+k),s=e.t[k];c.hidden=s==='n';c.style.order='psn'.indexOf(s);
+    $('stw-'+k).innerHTML=`<span class="pill ${SUIT[s][1]}" style="font-size:.72rem">${SUIT[s][0]}</span> ${e.w[k]}`});
+}
+function readSurvey(){
+  const t=EQ[$('sEq').value].t,on=k=>t[k]!=='n',r={};
+  if(on('tev'))r.tev={f:nn('s-tev-f'),b:nn('s-tev-b'),bg:nn('s-tev-bg'),n:nn('s-tev-n')};
+  if(on('aa'))r.aa={r:nn('s-aa-r'),bg:nn('s-aa-bg'),snd:$('s-aa-snd').checked};
+  if(on('ae'))r.ae={r:nn('s-ae-r'),bg:nn('s-ae-bg'),pat:$('s-ae-pat').value};
+  if(on('hfct'))r.hfct={l1:nn('s-hf-1'),l2:nn('s-hf-2'),l3:nn('s-hf-3'),pat:$('s-hf-pat').value};
+  if(on('uhf'))r.uhf={r:nn('s-uh-r'),bg:nn('s-uh-bg'),pat:$('s-uh-pat').value};
+  return r;
+}
+function metrics(r){
+  const m={};
+  if(r.tev){const v=[r.tev.f,r.tev.b].filter(fin);m.tev=v.length?Math.max(...v):null;m.tevBg=r.tev.bg;m.tevN=r.tev.n}
+  if(r.aa&&fin(r.aa.r))m.aa=fin(r.aa.bg)?r.aa.r-r.aa.bg:null;
+  if(r.ae&&fin(r.ae.r))m.ae=fin(r.ae.bg)?r.ae.r-r.ae.bg:null;
+  if(r.hfct){const v=[r.hfct.l1,r.hfct.l2,r.hfct.l3];const f=v.filter(fin);m.hf=f.length?Math.max(...f):null;m.hfPh=v}
+  if(r.uhf&&fin(r.uhf.r))m.uh=fin(r.uhf.bg)?r.uhf.r-r.uhf.bg:null;
+  return m;
+}
+const PDPATS=['void','surface','corona','float','particle'];
+function levels(r){
+  const m=metrics(r),L={};
+  L.tev=level(m.tev,thr.tevA,thr.tevR);
+  L.aa=level(m.aa,thr.usA,thr.usR);if(r.aa?.snd&&fin(r.aa?.r)&&L.aa!=='bad')L.aa='warn';
+  L.ae=level(m.ae,thr.usA,thr.usR);if(['random','100hz'].includes(r.ae?.pat)&&L.ae==='ok')L.ae='warn';
+  L.hfct=level(m.hf,thr.hfA,thr.hfR);if(PDPATS.includes(r.hfct?.pat)&&L.hfct==='ok')L.hfct='warn';
+  L.uhf=level(m.uh,thr.uhA,thr.uhR);if(r.uhf?.pat==='noise'&&L.uhf)L.uhf='ok';else if(PDPATS.includes(r.uhf?.pat)&&L.uhf==='ok')L.uhf='warn';
+  return{m,L,overall:worst(Object.values(L))};
+}
+const hi=l=>l==='warn'||l==='bad';
+function diagnose(equip,r,ctx){
+  const{m,L,overall}=levels(r),F=[];
+  const add=(sev,title,body,acts=[])=>F.push({sev,title,body,acts});
+  if(fin(m.tevBg)&&m.tevBg>=thr.tevBg)add('warn','خلفية TEV عالية',`الخلفية ${nf(m.tevBg,1)} dBmV، فقراءات TEV على اللوحات غير موثوقة.`,['ابحث عن مصدر الضوضاء (إضاءة، معدات قريبة، تفريغ في لوحة أخرى).','أعد القياس في وقت آخر أو اعتمد على HFCT والموجات فوق الصوتية.']);
+  if(equip==='gis'){
+    if(hi(L.uhf)&&hi(L.ae))add(worst([L.uhf,L.ae]),'جسيم حر أو جزء طافٍ','UHF والموجات التلامسية فوق الحد معاً، وهذا يدل على مصدر له حركة أو اهتزاز.',[r.ae?.pat==='random'?'النبضات العشوائية ترجّح جسيمات حرة.':r.ae?.pat==='100hz'?'نمط 100 Hz يرجّح جزءاً طافياً أو اهتزازاً.':'حدّد طبيعة الإشارة التلامسية: عشوائية أو 100 Hz.','حدّد الحجرة بمقارنة شدة AE على امتداد الغلاف.']);
+    else if(hi(L.uhf))add(L.uhf,'عيب عازل محتمل','UHF فوق الحد بدون إشارة صوتية. الفجوات في العوازل والنتوءات لا تُسمع غالباً.',['اقرأ نمط PRPD، وحدّد المكان بفرق زمن الوصول بين حساسين UHF.','تأكد أنه ليس تداخلاً خارجياً بقراءة حساس بعيد أو هوائي مرجعي.']);
+    else if(hi(L.ae))add(L.ae,'إشارة صوتية بلا UHF','قد تكون اهتزازاً ميكانيكياً (magnetostriction) أو جسيماً غير مشحون.',['تحقق من ارتباطها بالحمل، وكرّر القياس بعد فترة.']);
+  }else{
+    if(hi(L.tev)&&!hi(L.aa))add(L.tev,'تفريغ داخلي محتمل','TEV فوق الحد بدون صوت هوائي، وهذا يدل على مصدر داخل عزل صلب لا يصل صوته إلى الخارج.',['المرشحات: CT و VT، عوازل القضبان، spouts، نهاية كيبل في حجرة مغلقة.','قارن اللوحات المتجاورة، واستخدم HFCT على كيبلات اللوحة لمعرفة إن كان المصدر في الكيبل.']);
+    if(hi(L.aa)&&!hi(L.tev))add(L.aa,'تفريغ سطحي أو كورونا','صوت فوق الحد بدون TEV. المصدر غالباً على سطح عازل أو نهاية كيبل في الهواء.',[fin(ctx.hum)&&ctx.hum>=70?`الرطوبة ${nf(ctx.hum)}% مرتفعة وتزيد التفريغ السطحي. قارن بمسح في يوم أجف.`:'سجّل الرطوبة، فالتفريغ السطحي يتأثر بها كثيراً.','فحص نظري وتنظيف عند الإطفاء، وتحقق من السخانات والتهوية.']);
+    if(hi(L.aa)&&hi(L.tev))add(worst([L.aa,L.tev]),'تفريغ سطحي متقدم أو مصدران','الصوت و TEV فوق الحد معاً، فالتفريغ السطحي قوي بما يكفي لتوليد TEV، أو يوجد مصدران.',['أولوية عالية: حدّد اللوحة والحجرة بدقة، وخطط لإطفاء وفحص.']);
+  }
+  if(hi(L.hfct)){
+    const idx=(m.hfPh||[]).map((v,i)=>[v,i]).filter(x=>fin(x[0])).sort((a,b)=>b[0]-a[0]);
+    let phs='';if(idx.length>=2&&idx[0][0]>=2*Math.max(idx[1][0],1e-9))phs=` الطور L${idx[0][1]+1} أعلى من غيره بوضوح، فالمصدر في هذا الطور.`;
+    if(hi(L.aa))add(L.hfct,'عيب في نهاية الكيبل غالباً','HFCT والصوت الهوائي فوق الحد معاً عند حجرة الكيبل.'+phs,['افحص النهاية والكُم (stress cone) عند الإطفاء.']);
+    else if(!hi(L.tev)&&equip!=='gis')add(L.hfct,'المصدر في الكيبل أو الوصلات','HFCT فوق الحد بدون TEV أو صوت، فالمصدر غالباً بعيد عن اللوحة داخل الكيبل.'+phs,['حدّد المسافة بالانعكاس من طرف واحد (الحاسبات ← تحديد المكان).','قِس من الطرف الآخر للكيبل للتأكيد.']);
+    else add(L.hfct,'نبضات على الكيبل','HFCT فوق الحد.'+phs,['قارن الأطوار وقطبية النبضة، فالمصدر داخل الكيبل يعطي قطبية معاكسة للمصدر داخل اللوحة.']);
+  }
+  if(equip!=='gis'&&hi(L.uhf))add(L.uhf,'UHF يؤكد وجود مصدر','الإشارة فوق الضوضاء بوضوح.',['استخدم فرق زمن الوصول بين حساسين لتحديد اللوحة.']);
+  const pats=[r.uhf?.pat,r.hfct?.pat].filter(Boolean);
+  pats.filter((p,i)=>pats.indexOf(p)===i).forEach(p=>{const P=PRPD.find(x=>x.k===p);if(P)add(p==='noise'?'ok':'warn','نمط PRPD: '+P.name,P.risk,[P.act])});
+  if(ctx.prev){
+    const pm=metrics(ctx.prev.r||{}),pd=fmtDate(ctx.prev.date);
+    if(fin(m.tev)&&fin(pm.tev)&&m.tev-pm.tev>=6)add('warn','ارتفاع TEV عن المسح السابق',`ارتفع ${sgn(m.tev-pm.tev)} dB عن مسح ${pd} (${nf(pm.tev,1)} dBmV).`,['الارتفاع المستمر يدل على تطور العيب. قصّر فترة إعادة المسح.']);
+    if(fin(m.hf)&&fin(pm.hf)&&pm.hf>0&&m.hf/pm.hf>=2)add('warn','تضاعف شحنة HFCT',`من ${pc(pm.hf)} إلى ${pc(m.hf)} pC منذ ${pd}.`,['قصّر فترة إعادة المسح وحدّد المكان.']);
+    if(fin(m.aa)&&fin(pm.aa)&&m.aa-pm.aa>=6)add('warn','ارتفاع الموجات الهوائية',`ارتفعت ${sgn(m.aa-pm.aa)} dB عن مسح ${pd}.`,[]);
+    if(fin(m.uh)&&fin(pm.uh)&&m.uh-pm.uh>=6)add('warn','ارتفاع UHF',`ارتفع ${sgn(m.uh-pm.uh)} dB عن مسح ${pd}.`,[]);
+  }
+  const measured=Object.values(L).some(Boolean);
+  return{m,L,overall,F,measured,ov:worst([overall,...F.map(f=>f.sev)])};
+}
+const REC={ok:'لا توجد مؤشرات تفريغ في هذا المسح. استمر في المسح الدوري المعتاد.',
+  warn:'أعد المسح بفترة أقصر (مثلاً خلال 1–3 أشهر)، وأكّد بحساس ثانٍ، وحدّد المكان.',
+  bad:'تحقيق عاجل: أكّد بحساسين، حدّد المكان، وخطط لإطفاء وفحص أو إصلاح. قيّم تقييد التشغيل حسب سياسة شركتك.'};
+const VERD={ok:'لا مؤشرات تفريغ',warn:'مؤشرات تستحق المتابعة',bad:'تفريغ مرتفع'};
+function prevSurvey(aid,date){return surveys.filter(s=>s.assetId===aid&&s.date<(date||'9999')&&s.id!==editingSurvey).sort((a,b)=>b.date.localeCompare(a.date))[0]}
+function calcSurvey(){
+  const equip=$('sEq').value,r=readSurvey(),aid=$('sAsset').value;
+  const prev=aid&&aid!=='__new'?prevSurvey(aid,$('sDate').value):null;
+  const D=diagnose(equip,r,{hum:nn('sHum'),prev});
+  ORDER.forEach(k=>{const l=D.L[k],c=$('st-'+k);c.classList.remove('ok','warn','bad');if(l)c.classList.add(l);$('stl-'+k).innerHTML=c.hidden?'':pill(l)});
+  const o={};
+  if(r.tev)o.tev=fin(D.m.tev)?`الأعلى ${nf(D.m.tev,1)} dBmV${fin(D.m.tevBg)?` · ${sgn(D.m.tev-D.m.tevBg)} dB فوق الخلفية`:''} · تقدير عام ≈ ${pc(dbmvToMv(D.m.tev)/1e-3)} pC`:'';
+  if(r.aa)o.aa=fin(r.aa.r)?(fin(D.m.aa)?`${sgn(D.m.aa)} dB فوق الخلفية`:'أدخل الخلفية لحساب الفرق'):'';
+  if(r.ae)o.ae=fin(r.ae.r)?(fin(D.m.ae)?`${sgn(D.m.ae)} dB فوق الخلفية`:'أدخل الخلفية لحساب الفرق'):'';
+  if(r.hfct)o.hfct=fin(D.m.hf)?`الأعلى ${pc(D.m.hf)} pC`:'';
+  if(r.uhf)o.uhf=fin(r.uhf.r)?(fin(D.m.uh)?`${sgn(D.m.uh)} dB فوق الضوضاء · ${nf(dbmToMv(r.uhf.r),3)} mV RMS`:'أدخل أرضية الضوضاء لحساب الفرق'):'';
+  ORDER.forEach(k=>$('sto-'+k).textContent=o[k]||'');
+  const el=$('sDx');
+  if(!D.measured){el.className='dx stick';el.innerHTML=`<div class="eyebrow">التشخيص</div><div class="verdict" style="color:var(--muted)">بانتظار القراءات</div><p class="small muted">أدخل قراءة واحدة على الأقل. التشخيص يجمع الحساسات معاً: مثلاً TEV مرتفع بدون صوت يعني مصدراً داخلياً، والصوت بدون TEV يعني مصدراً سطحياً.</p>${prev?`<p class="small muted">آخر مسح لهذه اللوحة: ${fmtDate(prev.date)}، وستتم المقارنة به.</p>`:''}`;return D}
+  el.className='dx stick '+D.ov;
+  el.innerHTML=`<div class="eyebrow">التشخيص المجمّع</div><div class="verdict">${VERD[D.ov]}</div><p>${REC[D.ov]}</p>
+    <div class="row">${ORDER.filter(k=>D.L[k]).map(k=>`<span class="small">${TESTS[k].name}</span>${pill(D.L[k])}`).join('')}</div>
+    ${D.F.length?D.F.map(f=>`<div class="finding">${pill(f.sev)}<b>${f.title}</b><span class="small">${f.body}</span>${f.acts.length?`<ul>${f.acts.map(a=>`<li>${a}</li>`).join('')}</ul>`:'<span></span>'}</div>`).join(''):'<p class="small muted">القراءات المُدخلة ضمن المستوى المنخفض.</p>'}
+    ${prev?`<p class="small muted">قورن بمسح ${fmtDate(prev.date)} لنفس اللوحة.</p>`:aid&&aid!=='__new'?'<p class="small muted">أول مسح لهذه اللوحة، فلا يوجد ما يُقارن به.</p>':'<p class="small muted">اختر لوحة محفوظة لتتم المقارنة بمسحها السابق.</p>'}`;
+  return D;
+}
+$('s-survey').addEventListener('input',e=>{const id=e.target.id||'';if(id==='sAsset'||id.startsWith('na'))return;if(id==='sEq')renderSurveyCards();calcSurvey()});
+function assetOptions(){
+  const sel=$('sAsset'),cur=sel.value,bySite={};
+  assets.forEach(a=>{(bySite[a.site||'بدون موقع']??=[]).push(a)});
+  sel.innerHTML=`<option value="">— بدون لوحة محددة —</option>`+Object.keys(bySite).sort().map(s=>`<optgroup label="${esc(s)}">${bySite[s].sort((a,b)=>a.name.localeCompare(b.name)).map(a=>`<option value="${esc(a.id)}">${esc(a.name)} · ${esc(EQ[a.equip]?.name||'')}</option>`).join('')}</optgroup>`).join('')+`<option value="__new">+ لوحة جديدة…</option>`;
+  if([...sel.options].some(o=>o.value===cur))sel.value=cur;
+}
+$('sAsset').addEventListener('change',()=>{
+  const v=$('sAsset').value;$('naBox').hidden=v!=='__new';
+  if(v==='__new'){$('naName').focus();return}
+  const a=assets.find(x=>x.id===v);if(a){$('sEq').value=a.equip;renderSurveyCards()}
+  calcSurvey();
+});
+$('naCancel').onclick=()=>{$('sAsset').value='';$('naBox').hidden=true;calcSurvey()};
+$('naAdd').onclick=async()=>{
+  const name=$('naName').value.trim();if(!name){toast('اكتب اسم اللوحة.');$('naName').focus();return}
+  const doc={name,site:$('naSite').value.trim(),equip:$('sEq').value,createdAt:new Date().toISOString()};
+  let id;
+  if(db){try{const ref=db.collection('assets').doc();id=ref.id;pendingAsset=id;await ref.set(doc)}catch(e){pendingAsset=null;toast(e?.code==='invalid_argument'?'لا تملك صلاحية الحفظ.':'تعذّر الحفظ.');return}}
+  else{id='local-'+Date.now();assets.push({id,...doc})}
+  $('naName').value='';$('naSite').value='';$('naBox').hidden=true;
+  assetOptions();if([...$('sAsset').options].some(o=>o.value===id)){$('sAsset').value=id;pendingAsset=null}
+  calcSurvey();toast('أُضيفت اللوحة.');
+};
+function clearSurvey(){$('sTests').querySelectorAll('input').forEach(i=>i.type==='checkbox'?i.checked=false:i.value='');$('sTests').querySelectorAll('select').forEach(s=>s.value='');$('sNotes').value='';editingSurvey=null;$('sSave').textContent='حفظ المسح في السجل';calcSurvey()}
+$('sClear').onclick=clearSurvey;
+$('sSave').onclick=async()=>{
+  const D=calcSurvey();
+  if(!D.measured){toast('أدخل قراءة واحدة على الأقل.');return}
+  const aid=$('sAsset').value;
+  if(!aid||aid==='__new'){toast('اختر اللوحة أو أضف لوحة جديدة ليُحفظ المسح في سجلها.');$('sAsset').focus();return}
+  const doc={assetId:aid,date:$('sDate').value||today(),by:$('sBy').value.trim(),hum:nn('sHum'),temp:nn('sTemp'),equip:$('sEq').value,
+    r:readSurvey(),overall:D.ov,findings:D.F.map(f=>f.title),notes:$('sNotes').value.trim(),savedAt:new Date().toISOString()};
+  if(!db||aid.startsWith('local-')){const id=editingSurvey||'local-'+Date.now();surveys=[...surveys.filter(s=>s.id!==id),{id,...doc}];toast(db?'حُفظ لهذه الجلسة فقط.':'حُفظ لهذه الجلسة فقط، لأن التخزين غير متاح هنا.');clearSurvey();return}
+  const b=$('sSave');b.disabled=true;$('sMsg').textContent='جارٍ الحفظ…';
+  try{const col=db.collection('surveys'),ref=editingSurvey?col.doc(editingSurvey):col.doc();await ref.set(doc);$('sMsg').textContent='';toast('حُفظ المسح. تجده في «السجل».');clearSurvey()}
+  catch(e){$('sMsg').textContent=e?.code==='invalid_argument'?'لا تملك صلاحية الحفظ.':e?.code==='quota_exceeded'?'المساحة ممتلئة.':'تعذّر الحفظ، حاول مرة أخرى.'}
+  finally{b.disabled=!canWrite}
+};
+function loadSurveyIntoForm(s){
+  const set=(id,v)=>{if($(id))$(id).value=fin(v)?v:''};
+  $('sAsset').value=s.assetId;$('naBox').hidden=true;$('sEq').value=s.equip;renderSurveyCards();$('sDate').value=s.date;$('sBy').value=s.by||'';set('sHum',s.hum);set('sTemp',s.temp);$('sNotes').value=s.notes||'';
+  const r=s.r||{};
+  set('s-tev-f',r.tev?.f);set('s-tev-b',r.tev?.b);set('s-tev-bg',r.tev?.bg);set('s-tev-n',r.tev?.n);
+  set('s-aa-r',r.aa?.r);set('s-aa-bg',r.aa?.bg);$('s-aa-snd').checked=!!r.aa?.snd;
+  set('s-ae-r',r.ae?.r);set('s-ae-bg',r.ae?.bg);$('s-ae-pat').value=r.ae?.pat||'';
+  set('s-hf-1',r.hfct?.l1);set('s-hf-2',r.hfct?.l2);set('s-hf-3',r.hfct?.l3);$('s-hf-pat').value=r.hfct?.pat||'';
+  set('s-uh-r',r.uhf?.r);set('s-uh-bg',r.uhf?.bg);$('s-uh-pat').value=r.uhf?.pat||'';
+  editingSurvey=s.id;$('sSave').textContent='حفظ التعديل';calcSurvey();showSec('survey',true);
+}
+
+/* ================= LOG ================= */
+let selAsset=null;
+const SER=[['tev','TEV — الأعلى','dBmV',m=>m.tev,'tevA','tevR',1],['aa','موجات هوائية — فوق الخلفية','dB',m=>m.aa,'usA','usR',1],['ae','موجات تلامسية — فوق الخلفية','dB',m=>m.ae,'usA','usR',1],['hfct','HFCT — أعلى طور','pC',m=>m.hf,'hfA','hfR',0],['uhf','UHF — فوق الضوضاء','dB',m=>m.uh,'uhA','uhR',1]];
+function latestFor(aid){return surveys.filter(s=>s.assetId===aid).sort((a,b)=>b.date.localeCompare(a.date)||(b.savedAt||'').localeCompare(a.savedAt||''))[0]}
+const ovOf=s=>s?diagnose(s.equip,s.r||{},{hum:s.hum}).ov:null;
+function renderLog(){
+  const rows=assets.map(a=>{const l=latestFor(a.id);return{a,l,ov:ovOf(l),n:surveys.filter(s=>s.assetId===a.id).length}});
+  const cnt=k=>rows.filter(x=>x.l&&x.ov===k).length;
+  $('lStats').innerHTML=[['bad','مرتفع'],['warn','متوسط'],['ok','منخفض'],[null,'بلا مسح']].map(([k,n])=>`<div class="stat"><span class="small">${k?pill(k):'<span class="pill lv-none">بلا مسح</span>'}</span><span class="v">${k?cnt(k):rows.filter(x=>!x.l).length}</span><span class="small muted">لوحة حسب آخر مسح</span></div>`).join('');
+  if(!assets.length){$('lAssets').innerHTML=`<tbody><tr><td style="white-space:normal"><div class="empty" style="border:0">لا توجد لوحات بعد. من قسم «المسح» اختر «+ لوحة جديدة»، وأدخل القراءات واحفظ، فتظهر هنا مع حالتها واتجاهها.</div></td></tr></tbody>`;$('lDetail').innerHTML='';return}
+  const rank={bad:0,warn:1,ok:2};
+  rows.sort((x,y)=>(rank[x.ov]??3)-(rank[y.ov]??3)||(y.l?.date||'').localeCompare(x.l?.date||''));
+  if(!selAsset||!assets.some(a=>a.id===selAsset))selAsset=rows[0].a.id;
+  $('lAssets').innerHTML=`<thead><tr><th>اللوحة</th><th>الموقع</th><th>النوع</th><th>آخر مسح</th><th>الحالة</th><th>المسوحات</th></tr></thead><tbody>${rows.map(x=>`<tr class="assetrow ${x.a.id===selAsset?'sel':''}" data-a="${esc(x.a.id)}" tabindex="0"><td><b>${esc(x.a.name)}</b></td><td>${esc(x.a.site||'—')}</td><td>${esc(EQ[x.a.equip]?.name||'')}</td><td class="num">${fmtDate(x.l?.date)}</td><td>${x.l?pill(x.ov):'<span class="pill lv-none">بلا مسح</span>'}</td><td class="num">${x.n}</td></tr>`).join('')}</tbody>`;
+  renderDetail();
+}
+$('lAssets').addEventListener('click',e=>{const r=e.target.closest('[data-a]');if(r){selAsset=r.dataset.a;renderLog()}});
+$('lAssets').addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest('[data-a]');if(r){selAsset=r.dataset.a;renderLog()}}});
+function renderDetail(){
+  const a=assets.find(x=>x.id===selAsset),el=$('lDetail');if(!a){el.innerHTML='';return}
+  const list=surveys.filter(s=>s.assetId===a.id).sort((x,y)=>x.date.localeCompare(y.date));
+  const head=`<div class="row between"><div><h3 style="font-size:1.15rem">${esc(a.name)}</h3><p class="small muted">${esc(a.site||'')}${a.site?' · ':''}${esc(EQ[a.equip]?.name||'')} · ${list.length} مسح</p></div>
+    <div class="row"><button class="btn sm pri" data-act="new">مسح جديد لهذه اللوحة</button><button class="btn sm danger" data-act="delA" ${canWrite?'':'disabled'}>حذف اللوحة</button></div></div>`;
+  if(!list.length){el.innerHTML=head+`<div class="empty">لا توجد مسوحات لهذه اللوحة بعد.</div>`;return}
+  const charts=SER.map(([k,t,u,f,ka,kr,d])=>{const pts=list.map(s=>({s,v:f(metrics(s.r||{}))})).filter(p=>fin(p.v));return pts.length?trendChart(k,t,u,pts,thr[ka],thr[kr],d):''}).filter(Boolean);
+  const table=`<div class="scroll"><table><thead><tr><th>التاريخ</th><th>الحالة</th><th>TEV</th><th>AA Δ</th><th>AE Δ</th><th>HFCT</th><th>UHF Δ</th><th>الرطوبة</th><th>النتيجة</th><th></th></tr></thead><tbody>${
+    [...list].reverse().map(s=>{const m=metrics(s.r||{});return`<tr><td class="num">${fmtDate(s.date)}</td><td>${pill(ovOf(s))}</td><td class="num">${fin(m.tev)?nf(m.tev,1):'—'}</td><td class="num">${fin(m.aa)?sgn(m.aa):'—'}</td><td class="num">${fin(m.ae)?sgn(m.ae):'—'}</td><td class="num">${fin(m.hf)?pc(m.hf):'—'}</td><td class="num">${fin(m.uh)?sgn(m.uh):'—'}</td><td class="num">${fin(s.hum)?nf(s.hum)+'%':'—'}</td><td class="wrap small">${esc((s.findings||[]).join('، ')||'—')}${s.notes?`<br><span class="muted">${esc(s.notes)}</span>`:''}${s.by?`<br><span class="muted">${esc(s.by)}</span>`:''}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" data-edit="${esc(s.id)}">تعديل</button><button class="btn sm danger" data-del="${esc(s.id)}" ${canWrite?'':'disabled'}>حذف</button></div></td></tr>`}).join('')}</tbody></table></div>`;
+  el.innerHTML=head+(charts.length?`<div class="charts">${charts.join('')}</div><p class="small muted">الخلفية الملونة هي حدود التقييم الحالية (أخضر منخفض، أصفر متوسط، أحمر مرتفع). مرّر أو المس أي نقطة لترى قيمتها.</p>`:'')+table;
+  bindCharts();
+}
+$('lDetail').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.act==='new'){const a=assets.find(x=>x.id===selAsset);if(!a)return;clearSurvey();$('sAsset').value=a.id;$('naBox').hidden=true;$('sEq').value=a.equip;$('sDate').value=today();renderSurveyCards();calcSurvey();showSec('survey',true);return}
+  if(b.dataset.edit){const s=surveys.find(x=>x.id===b.dataset.edit);if(s)loadSurveyIntoForm(s);return}
+  const arm=txt=>{if(b.dataset.armed!=='1'){b.dataset.armed='1';const o=b.textContent;b.textContent=txt;setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent=o}},4000);return false}return true};
+  if(b.dataset.del){if(!arm('تأكيد'))return;const id=b.dataset.del;
+    if(!db||id.startsWith('local-')){surveys=surveys.filter(s=>s.id!==id);renderLog();return}
+    try{await db.collection('surveys').doc(id).delete();toast('حُذف المسح.')}catch(err){toast('تعذّر الحذف.')}return}
+  if(b.dataset.act==='delA'){const n=surveys.filter(s=>s.assetId===selAsset).length;if(!arm(n?`تأكيد حذف اللوحة و${n} مسح`:'تأكيد الحذف'))return;
+    const id=selAsset,mine=surveys.filter(s=>s.assetId===id);
+    if(!db||id.startsWith('local-')){assets=assets.filter(a=>a.id!==id);surveys=surveys.filter(s=>s.assetId!==id);selAsset=null;assetOptions();renderLog();return}
+    try{for(const s of mine)await db.collection('surveys').doc(s.id).delete();await db.collection('assets').doc(id).delete();selAsset=null;toast('حُذفت اللوحة وسجلها.')}catch(err){toast('تعذّر الحذف.')}}
+});
+function niceStep(raw){const p=10**Math.floor(L10(raw||1)),n=raw/p;return(n<=1?1:n<=2?2:n<=5?5:10)*p}
+function trendChart(k,title,unit,pts,a,r,d){
+  const W=320,H=150,ml=42,mr=12,mt=10,mb=24,iw=W-ml-mr,ih=H-mt-mb;
+  const vs=pts.map(p=>p.v);let lo=Math.min(0,...vs);const top=Math.max(r*1.25,...vs)*1.08;if(lo<0)lo*=1.15;
+  const t=pts.map(p=>Date.parse(p.s.date));const t0=Math.min(...t),t1=Math.max(...t);
+  const X=v=>pts.length===1||t1===t0?ml+iw/2:ml+(v-t0)/(t1-t0)*iw,Y=v=>mt+ih-(v-lo)/(top-lo)*ih;
+  const step=niceStep((top-lo)/4),ticks=[];for(let v=Math.ceil(lo/step)*step;v<=top+1e-9;v+=step)ticks.push(v);
+  const yb=v=>Math.max(mt,Math.min(mt+ih,Y(v)));
+  const bands=`<rect x="${ml}" y="${yb(a)}" width="${iw}" height="${yb(lo)-yb(a)}" fill="var(--ok-soft)"/><rect x="${ml}" y="${yb(r)}" width="${iw}" height="${yb(a)-yb(r)}" fill="var(--warn-soft)"/><rect x="${ml}" y="${mt}" width="${iw}" height="${yb(r)-mt}" fill="var(--bad-soft)"/>`;
+  const grid=ticks.map(v=>`<line x1="${ml}" x2="${ml+iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)" stroke-width="1"/><text x="${ml-6}" y="${Y(v)+3.5}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${nf(v,step<1?1:0)}</text>`).join('');
+  const path=pts.map((p,i)=>(i?'L':'M')+X(t[i]).toFixed(1)+','+Y(p.v).toFixed(1)).join('');
+  const area=pts.length>1?`<path d="${path}L${X(t[t.length-1]).toFixed(1)},${Y(Math.max(lo,0))}L${X(t[0]).toFixed(1)},${Y(Math.max(lo,0))}Z" fill="var(--accent-wash)"/>`:'';
+  const dots=pts.map((p,i)=>`<circle cx="${X(t[i])}" cy="${Y(p.v)}" r="${i===pts.length-1?5:4}" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>`).join('');
+  const mono='font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace"';
+  const xl=pts.length>1?`<text x="${ml}" y="${H-6}" ${mono}>${fmtDate(pts[0].s.date)}</text><text x="${ml+iw}" y="${H-6}" text-anchor="end" ${mono}>${fmtDate(pts[pts.length-1].s.date)}</text>`:`<text x="${ml+iw/2}" y="${H-6}" text-anchor="middle" ${mono}>${fmtDate(pts[0].s.date)}</text>`;
+  const last=pts[pts.length-1].v,prev=pts.length>1?pts[pts.length-2].v:null;
+  const delta=fin(prev)?(k==='hfct'?(prev>0?` · ×${nf(last/prev,1)} عن السابق`:''):` · ${sgn(last-prev)} dB عن السابق`):' · أول قراءة';
+  const data=JSON.stringify(pts.map((p,i)=>({x:X(t[i]),y:Y(p.v),d:fmtDate(p.s.date),v:(d?nf(p.v,1):pc(p.v))+' '+unit})));
+  return`<figure class="chart" style="margin:0"><div class="row between"><b class="small">${title}</b><span class="small num">${d?nf(last,1):pc(last)} ${unit}</span></div><span class="small muted">آخر قراءة${delta}</span>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}" data-pts="${esc(data)}" data-w="${W}">${bands}${grid}${area}<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xl}<line class="xh" y1="${mt}" y2="${mt+ih}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/></svg><div class="tip" hidden></div></figure>`;
+}
+function bindCharts(){
+  $('lDetail').querySelectorAll('.chart svg').forEach(svg=>{
+    const pts=JSON.parse(svg.dataset.pts),tip=svg.parentNode.querySelector('.tip'),xh=svg.querySelector('.xh'),W=+svg.dataset.w;
+    const move=e=>{const r=svg.getBoundingClientRect(),sx=(e.clientX-r.left)/r.width*W;let b=pts[0];pts.forEach(p=>{if(Math.abs(p.x-sx)<Math.abs(b.x-sx))b=p});
+      xh.setAttribute('x1',b.x);xh.setAttribute('x2',b.x);xh.setAttribute('visibility','visible');
+      tip.hidden=false;tip.textContent=b.d+' · '+b.v;const fr=svg.parentNode.getBoundingClientRect(),s=r.width/W;
+      tip.style.left=Math.min(fr.width-60,Math.max(60,r.left-fr.left+b.x*s))+'px';tip.style.top=(r.top-fr.top+b.y*s-8)+'px'};
+    svg.addEventListener('pointermove',move);svg.addEventListener('pointerdown',move);
+    svg.addEventListener('pointerleave',()=>{tip.hidden=true;xh.setAttribute('visibility','hidden')});
+  });
+}
+$('lCsv').onclick=async()=>{
+  if(!surveys.length){$('lCsvMsg').textContent='لا توجد مسوحات للتصدير.';return}
+  const H=['اللوحة','الموقع','النوع','التاريخ','القائم بالمسح','الرطوبة %','الحرارة','TEV أمام','TEV خلف','TEV خلفية','نبضات/دورة','AA','AA خلفية','صوت','AE','AE خلفية','نمط AE','HFCT L1','HFCT L2','HFCT L3','نمط HFCT','UHF dBm','UHF ضوضاء','نمط UHF','الحالة','النتائج','ملاحظات'];
+  const c=v=>{const s=v===null||v===undefined?'':String(v);return/[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const lines=[...surveys].sort((a,b)=>a.date.localeCompare(b.date)).map(s=>{const a=assets.find(x=>x.id===s.assetId)||{},r=s.r||{};
+    return[a.name,a.site,EQ[s.equip]?.name,s.date,s.by,s.hum,s.temp,r.tev?.f,r.tev?.b,r.tev?.bg,r.tev?.n,r.aa?.r,r.aa?.bg,r.aa?.snd?'نعم':'',r.ae?.r,r.ae?.bg,r.ae?.pat,r.hfct?.l1,r.hfct?.l2,r.hfct?.l3,r.hfct?.pat,r.uhf?.r,r.uhf?.bg,r.uhf?.pat,LVN[ovOf(s)]||'',(s.findings||[]).join(' | '),s.notes].map(c).join(',')});
+  const csv='﻿'+[H.join(','),...lines].join('\r\n');
+  if(!dl){try{await navigator.clipboard.writeText(csv);$('lCsvMsg').textContent='الحفظ كملف غير متاح هنا، فنُسخ السجل إلى الحافظة. الصقه في Excel.'}catch(e){$('lCsvMsg').textContent='التصدير غير متاح في هذا العرض.'}return}
+  try{await dl.save({filename:`pd-survey-log-${today()}.csv`,data:new Blob([csv],{type:'text/csv'})});$('lCsvMsg').textContent=''}
+  catch(e){$('lCsvMsg').textContent=e?.code==='declined'?'':'تعذّر حفظ الملف.'}
+};
+
+/* ================= CALCULATORS ================= */
+const CT=[['tev','TEV'],['us','موجات فوق صوتية'],['hfct','HFCT'],['uhf','UHF'],['loc','تحديد المكان'],['units','الوحدات و IEC 60270']];
+$('ctabs').innerHTML=CT.map(([k,n])=>`<button role="tab" id="ct-${k}" data-c="${k}">${n}</button>`).join('');
+function showCalc(k){CT.forEach(([c])=>{$('c-'+c).hidden=c!==k;$('ct-'+c).setAttribute('aria-selected',c===k)})}
+$('ctabs').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(b)showCalc(b.dataset.c)});
 function calOptions(sel,sensor,generic){
-  const cur=sel.value,list=cals.filter(c=>c.sensor===sensor);
+  const cur=sel.value,list=cals.filter(c=>c.sensor===sensor&&c.kind==='amp');
   sel.innerHTML=(generic?`<option value="">تقدير عام (Reid 2012، ±10×)</option>`:list.length?'':`<option value="">لا توجد معايرة محفوظة لهذا الحساس</option>`)+
-    list.map(c=>`<option value="${esc(c.id)}">${esc(c.name||'بدون اسم')}${c.site?' — '+esc(c.site):''} (${c.kind==='energy'?'طاقة':esc(c.unit)})</option>`).join('');
+    list.map(c=>`<option value="${esc(c.id)}">${esc(c.name||'بدون اسم')}${c.site?' — '+esc(c.site):''} (${esc(c.unit)})</option>`).join('');
   if([...sel.options].some(o=>o.value===cur))sel.value=cur;
 }
 function calcTev(){
-  const r=num('tevR'),bg=num('tevB'),n=num('tevN'),cid=$('tevCal').value,el=$('tevOut');
-  if(!Number.isFinite(r)){readout(el,'','<p class="muted">أدخل القراءة.</p>');return}
+  const r=num('tevR'),bg=num('tevB'),n=num('tevN'),el=$('tevOut');
+  if(!fin(r)){readout(el,'','<p class="muted">أدخل القراءة.</p>');return}
   const cls=level(r,thr.tevA,thr.tevR),flags=[];
-  if(Number.isFinite(bg)){
-    if(bg>=thr.tevBg)flags.push(`الخلفية عالية (${nf(bg,1)} dBmV ≥ ${thr.tevBg}). القراءة على اللوحة غير موثوقة، فابحث عن مصدر الضوضاء أو أعد القياس في وقت آخر.`);
-    if(r-bg<3)flags.push('القراءة ضمن 3 dB من الخلفية، فقد لا يكون هناك تفريغ أصلاً.');
-  }
-  if(Number.isFinite(n)&&n>0)flags.push(`عدد النبضات ${nf(n)} لكل دورة. العدد الكبير مع سعة متوسطة يستحق الاهتمام بقدر السعة العالية.`);
-  let conv;
-  const c=cals.find(x=>x.id===cid);
-  if(c&&c.kind==='amp'){
-    if(c.unit!=='dBmV')flags.push(`المعايرة المختارة بوحدة ${esc(c.unit)}، والقراءة هنا تُعامل بنفس الوحدة.`);
-    const p=predAmp(c.fit,r,c.unit);
-    conv=`<div class="kv"><span>الشحنة (معايرة: ${esc(c.name)})</span><span class="num">≈ ${pc(p.q)} pC</span><span>مجال 95%</span><span class="num">${pc(p.lo)} – ${pc(p.hi)} pC</span></div>`;
-    if(p.extrap)flags.push('القراءة بعيدة عن مدى نقاط المعايرة، والمجال أوسع لهذا السبب.');
-  }else{
-    const q=dbmvToMv(r)/1e-3;
-    conv=`<div class="kv"><span>تقدير عام</span><span class="num">≈ ${pc(q)} pC</span><span>مجال توضيحي</span><span class="num">${pc(q/10)} – ${pc(q*10)} pC</span></div>`;
-  }
-  readout(el,cls,`<div class="big">${nf(r,1)} <small>dBmV</small></div>
-    ${meter({min:0,max:Math.max(50,thr.tevR+15),a:thr.tevA,r:thr.tevR,v:r,bg,unit:'dBmV'})}
-    <div class="status">${LVL[cls]}</div>
-    <div class="kv"><span>فوق الخلفية</span><span class="num">${Number.isFinite(bg)?(r-bg>=0?'+':'')+nf(r-bg,1)+' dB':'—'}</span></div>
-    ${conv}${flags.length?`<ul class="flags">${flags.map(f=>`<li>${f}</li>`).join('')}</ul>`:''}`);
+  if(fin(bg)){if(bg>=thr.tevBg)flags.push(`الخلفية عالية (${nf(bg,1)} dBmV ≥ ${thr.tevBg}). القراءة على اللوحة غير موثوقة، فابحث عن مصدر الضوضاء أو أعد القياس في وقت آخر.`);if(r-bg<3)flags.push('القراءة ضمن 3 dB من الخلفية، فقد لا يكون هناك تفريغ أصلاً.')}
+  if(fin(n)&&n>0)flags.push(`عدد النبضات ${nf(n)} لكل دورة. العدد الكبير مع سعة متوسطة يستحق الاهتمام بقدر السعة العالية.`);
+  let conv;const c=cals.find(x=>x.id===$('tevCal').value);
+  if(c){if(c.unit!=='dBmV')flags.push(`المعايرة المختارة بوحدة ${esc(c.unit)}، والقراءة هنا تُعامل بنفس الوحدة.`);
+    const p=predAmp(c.fit,r,c.unit);conv=`<div class="kv"><span>الشحنة (معايرة: ${esc(c.name)})</span><span class="num">≈ ${pc(p.q)} pC</span><span>مجال 95%</span><span class="num">${pc(p.lo)} – ${pc(p.hi)} pC</span></div>`;
+    if(p.extrap)flags.push('القراءة بعيدة عن مدى نقاط المعايرة، والمجال أوسع لهذا السبب.')}
+  else{const q=dbmvToMv(r)/1e-3;conv=`<div class="kv"><span>تقدير عام</span><span class="num">≈ ${pc(q)} pC</span><span>مجال توضيحي</span><span class="num">${pc(q/10)} – ${pc(q*10)} pC</span></div>`}
+  readout(el,cls,`<div class="big">${nf(r,1)} <small>dBmV</small></div>${meter({min:0,max:Math.max(50,thr.tevR+15),a:thr.tevA,r:thr.tevR,v:r,bg,unit:'dBmV'})}
+    <div class="status">${LVL[cls]}</div><div class="kv"><span>فوق الخلفية</span><span class="num">${fin(bg)?sgn(r-bg)+' dB':'—'}</span></div>${conv}
+    ${flags.length?`<ul class="flags">${flags.map(f=>`<li>${f}</li>`).join('')}</ul>`:''}`);
 }
 ['tevR','tevB','tevN','tevCal'].forEach(id=>$(id).addEventListener('input',calcTev));
-
-/* ---------- Ultrasonic ---------- */
 function calcUs(){
   const r=num('usR'),bg=num('usB'),snd=$('usSnd').checked,m=$('usM').value,el=$('usOut');
-  if(!Number.isFinite(r)||!Number.isFinite(bg)){readout(el,'','<p class="muted">أدخل القراءة والخلفية.</p>');return}
-  const d=r-bg;let cls=level(d,thr.usA,thr.usR);
-  if(snd&&cls==='ok')cls='warn';
-  const flags=[];
+  if(!fin(r)||!fin(bg)){readout(el,'','<p class="muted">أدخل القراءة والخلفية.</p>');return}
+  const d=r-bg;let cls=level(d,thr.usA,thr.usR);if(snd&&cls==='ok')cls='warn';const flags=[];
   if(snd)flags.push(m==='aa'?'الطقطقة المتقطعة تدل غالباً على تفريغ سطحي أو تتبّع، والأزيز المستمر على كورونا.':'نبضات عشوائية الطور تدل على جسيمات حرة، ونمط منتظم عند 100 Hz يدل على جزء طافٍ أو اهتزاز.');
   if(!snd&&d>=thr.usA)flags.push('لم يُسمع صوت مميز. تأكد أن المصدر ليس مروحة أو تسرب هواء أو اهتزاز محوّل.');
-  readout(el,cls,`<div class="big">${d>=0?'+':''}${nf(d,1)} <small>dB فوق الخلفية</small></div>
-    ${meter({min:0,max:Math.max(20,thr.usR+8),a:thr.usA,r:thr.usR,v:Math.max(0,d),unit:'Δ dB'})}
-    <div class="status">${LVL[cls]}</div>
-    <div class="kv"><span>القراءة / الخلفية</span><span class="num">${nf(r,1)} / ${nf(bg,1)} dBµV</span><span>إلى pC</span><span>لا يوجد تحويل معتمد</span></div>
+  readout(el,cls,`<div class="big">${sgn(d)} <small>dB فوق الخلفية</small></div>${meter({min:0,max:Math.max(20,thr.usR+8),a:thr.usA,r:thr.usR,v:Math.max(0,d),unit:'Δ dB'})}
+    <div class="status">${LVL[cls]}</div><div class="kv"><span>القراءة / الخلفية</span><span class="num">${nf(r,1)} / ${nf(bg,1)} dBµV</span><span>إلى pC</span><span>لا يوجد تحويل معتمد</span></div>
     ${flags.length?`<ul class="flags">${flags.map(f=>`<li>${f}</li>`).join('')}</ul>`:''}`);
 }
 ['usR','usB','usSnd','usM'].forEach(id=>$(id).addEventListener('input',calcUs));
-
-/* ---------- HFCT ---------- */
 function calcHf(){
   const m=$('hfM').value,el=$('hfOut');$('hfK').hidden=m!=='k';$('hfC').hidden=m!=='cal';
-  let q,lo,hi,extra='';
-  if(m==='k'){
-    const u=num('hfU'),Z=num('hfZ'),T=num('hfT');
-    if(!(u>0&&Z>0&&T>0)){readout(el,'','<p class="muted">أدخل قيماً موجبة للذروة و Z<sub>s</sub> و T<sub>PD</sub>.</p>');return}
-    const k=T/Z;q=k*u;
-    extra=`<div class="kv"><span>k = T<sub>PD</sub>/Z<sub>s</sub></span><span class="num">${nf(k,3)} pC/mV</span><span>تيار الذروة u/Z<sub>s</sub></span><span class="num">${nf(u/Z,2)} mA</span></div>`;
-  }else{
-    const c=cals.find(x=>x.id===$('hfCal').value),r=num('hfR');
-    if(!c){readout(el,'','<p class="muted">احفظ معايرة HFCT من تبويب المعايرة أولاً.</p>');return}
-    if(!Number.isFinite(r)){readout(el,'','<p class="muted">أدخل القراءة.</p>');return}
+  let q,lo,hi2,extra='';
+  if(m==='k'){const u=num('hfU'),Z=num('hfZ'),T=num('hfT');
+    if(!(u>0&&Z>0&&T>0)){readout(el,'','<p class="muted">أدخل قيماً موجبة للذروة و Zs و T_PD.</p>');return}
+    const k=T/Z;q=k*u;extra=`<div class="kv"><span>k = T_PD / Zs</span><span class="num">${nf(k,3)} pC/mV</span><span>تيار الذروة u / Zs</span><span class="num">${nf(u/Z,2)} mA</span></div>`}
+  else{const c=cals.find(x=>x.id===$('hfCal').value),r=num('hfR');
+    if(!c){readout(el,'','<p class="muted">احفظ معايرة HFCT من قسم «المعايرة» أولاً.</p>');return}
+    if(!fin(r)){readout(el,'','<p class="muted">أدخل القراءة.</p>');return}
     if(c.unit==='mV'&&!(r>0)){readout(el,'','<p class="muted">قراءة mV يجب أن تكون أكبر من صفر.</p>');return}
-    ({q,lo,hi}=predAmp(c.fit,r,c.unit));
-    extra=`<div class="kv"><span>مجال 95%</span><span class="num">${pc(lo)} – ${pc(hi)} pC</span><span>المعايرة</span><span>${esc(c.name)} (${esc(c.unit)})</span></div>`;
-  }
+    ({q,lo,hi:hi2}=predAmp(c.fit,r,c.unit));extra=`<div class="kv"><span>مجال 95%</span><span class="num">${pc(lo)} – ${pc(hi2)} pC</span><span>المعايرة</span><span>${esc(c.name)} (${esc(c.unit)})</span></div>`}
   const cls=level(q,thr.hfA,thr.hfR);
-  readout(el,cls,`<div class="big">${pc(q)} <small>pC</small></div>
-    ${meter({min:0,max:Math.max(thr.hfR*1.6,thr.hfR+500),a:thr.hfA,r:thr.hfR,v:q,unit:'pC'})}
-    <div class="status">${LVL[cls]}</div>${extra}
-    <ul class="flags"><li>قارن الأطوار الثلاثة: إذا ظهرت النبضة على طور واحد فقط وبقطبية واضحة، فالمصدر غالباً في ذلك الكيبل.</li></ul>`);
+  readout(el,cls,`<div class="big">${pc(q)} <small>pC</small></div>${meter({min:0,max:Math.max(thr.hfR*1.6,thr.hfR+500),a:thr.hfA,r:thr.hfR,v:q,unit:'pC'})}
+    <div class="status">${LVL[cls]}</div>${extra}<ul class="flags"><li>قارن الأطوار الثلاثة: إذا ظهرت النبضة على طور واحد فقط وبقطبية واضحة، فالمصدر غالباً في ذلك الكيبل.</li></ul>`);
 }
 ['hfM','hfU','hfZ','hfT','hfR','hfCal'].forEach(id=>$(id).addEventListener('input',calcHf));
-
-/* ---------- UHF ---------- */
 function calcUh(){
   const m=$('uhM').value,el=$('uhOut');$('uhA').hidden=m!=='amp';$('uhE').hidden=m!=='en';
-  const sel=$('uhCal'),cur=sel.value;
-  const list=cals.filter(c=>c.sensor==='uhf'&&(m==='en'?c.kind==='energy':c.kind==='amp'));
+  const sel=$('uhCal'),cur=sel.value,list=cals.filter(c=>c.sensor==='uhf'&&(m==='en'?c.kind==='energy':c.kind==='amp'));
   sel.innerHTML=`<option value="">بدون تحويل (تقييم بالفرق عن الضوضاء)</option>`+list.map(c=>`<option value="${esc(c.id)}">${esc(c.name||'بدون اسم')}${c.site?' — '+esc(c.site):''}</option>`).join('');
   if([...sel.options].some(o=>o.value===cur))sel.value=cur;
   const c=cals.find(x=>x.id===sel.value);
-  if(m==='en'){
-    const E=num('uhEn');
+  if(m==='en'){const E=num('uhEn');
     if(!(E>=0)){readout(el,'','<p class="muted">أدخل طاقة غير سالبة.</p>');return}
-    if(!c){readout(el,'',`<div class="big">${nf(E,3)} <small>pJ</small></div><p class="muted">اختر معايرة طاقة (E = c·q²) لتحويلها إلى pC. احفظها من تبويب المعايرة.</p>`);return}
+    if(!c){readout(el,'',`<div class="big">${nf(E,3)} <small>pJ</small></div><p class="muted">اختر معايرة طاقة (E = c·q²) لتحويلها إلى pC. احفظها من قسم «المعايرة».</p>`);return}
     const q=Math.sqrt(E/c.fit.c);
-    readout(el,'',`<div class="big">${pc(q)} <small>pC</small></div>
-      <div class="kv"><span>q = √(E/c)</span><span class="num">c = ${c.fit.c.toExponential(3)} pJ/pC²</span><span>المعايرة</span><span>${esc(c.name)} · R² = ${nf(c.fit.r2,3)}</span></div>
-      <ul class="flags"><li>الثابت c خاص بنوع العيب وموضع الحساس. عيب من نوع آخر أو في مكان آخر يحتاج ثابتاً مختلفاً.</li></ul>`);
-    return;
-  }
+    readout(el,'',`<div class="big">${pc(q)} <small>pC</small></div><div class="kv"><span>q = √(E/c)</span><span class="num">c = ${c.fit.c.toExponential(3)} pJ/pC²</span><span>المعايرة</span><span>${esc(c.name)} · R² = ${nf(c.fit.r2,3)}</span></div>
+      <ul class="flags"><li>الثابت c خاص بنوع العيب وموضع الحساس. عيب من نوع آخر أو في مكان آخر يحتاج ثابتاً مختلفاً.</li></ul>`);return}
   const r=num('uhR'),bg=num('uhB'),u=$('uhU').value;
-  if(!Number.isFinite(r)){readout(el,'','<p class="muted">أدخل القراءة.</p>');return}
+  if(!fin(r)){readout(el,'','<p class="muted">أدخل القراءة.</p>');return}
   if(u==='mV'&&!(r>0)){readout(el,'','<p class="muted">قراءة mV يجب أن تكون أكبر من صفر.</p>');return}
-  const db=v=>u==='mV'?mvToDbmv(v):v;
-  const d=Number.isFinite(bg)&&(u!=='mV'||bg>0)?db(r)-db(bg):NaN;
-  const cls=level(d,thr.uhA,thr.uhR);
+  const dbv=v=>u==='mV'?mvToDbmv(v):v,d=fin(bg)&&(u!=='mV'||bg>0)?dbv(r)-dbv(bg):NaN,cls=level(d,thr.uhA,thr.uhR);
   const alt=u==='dBm'?`${nf(dbmToMv(r),3)} mV RMS`:u==='mV'?`${nf(mvToDbm(r),1)} dBm`:`${nf(dbmvToMv(r),3)} mV`;
   let conv='';const flags=[];
-  if(c){
-    if(c.unit!==u)flags.push(`المعايرة المختارة بوحدة ${esc(c.unit)} وليست ${u}. غيّر الوحدة لتطابقها.`);
-    else{const p=predAmp(c.fit,r,u);conv=`<div class="kv"><span>الشحنة (معايرة)</span><span class="num">≈ ${pc(p.q)} pC</span><span>مجال 95%</span><span class="num">${pc(p.lo)} – ${pc(p.hi)} pC</span></div>`;if(p.extrap)flags.push('القراءة خارج مدى نقاط المعايرة.')}
-  }
-  flags.push('إذا ارتبطت الإشارة بطور الجهد (نمط PRPD متكرر عند 0–90° و180–270°) فهي تفريغ حقيقي. أما الإشارة المستمرة غير المرتبطة بالطور فهي غالباً اتصالات.');
-  readout(el,cls||'',`<div class="big">${Number.isFinite(d)?(d>=0?'+':'')+nf(d,1):'—'} <small>dB فوق الضوضاء</small></div>
-    ${meter({min:0,max:Math.max(25,thr.uhR+10),a:thr.uhA,r:thr.uhR,v:Math.max(0,d),unit:'Δ dB'})}
-    <div class="status">${cls?LVL[cls]:'أدخل أرضية الضوضاء لتقييم القراءة'}</div>
-    <div class="kv"><span>القراءة</span><span class="num">${nf(r,2)} ${u} = ${alt}</span></div>${conv}
+  if(c){if(c.unit!==u)flags.push(`المعايرة المختارة بوحدة ${esc(c.unit)} وليست ${u}. غيّر الوحدة لتطابقها.`);
+    else{const p=predAmp(c.fit,r,u);conv=`<div class="kv"><span>الشحنة (معايرة)</span><span class="num">≈ ${pc(p.q)} pC</span><span>مجال 95%</span><span class="num">${pc(p.lo)} – ${pc(p.hi)} pC</span></div>`;if(p.extrap)flags.push('القراءة خارج مدى نقاط المعايرة.')}}
+  flags.push('إذا ارتبطت الإشارة بطور الجهد فهي تفريغ حقيقي، فقارن شكلها بقسم «أنماط PRPD». أما الإشارة المستمرة غير المرتبطة بالطور فهي غالباً اتصالات.');
+  readout(el,cls,`<div class="big">${fin(d)?sgn(d):'—'} <small>dB فوق الضوضاء</small></div>${meter({min:0,max:Math.max(25,thr.uhR+10),a:thr.uhA,r:thr.uhR,v:fin(d)?Math.max(0,d):NaN,unit:'Δ dB'})}
+    <div class="status">${cls?LVL[cls]:'أدخل أرضية الضوضاء لتقييم القراءة'}</div><div class="kv"><span>القراءة</span><span class="num">${nf(r,2)} ${u} = ${alt}</span></div>${conv}
     <ul class="flags">${flags.map(f=>`<li>${f}</li>`).join('')}</ul>`);
 }
 ['uhM','uhR','uhU','uhB','uhEn','uhCal'].forEach(id=>$(id).addEventListener('input',calcUh));
 
-/* ---------- Units / IEC ---------- */
+/* localization */
+function lineDiag({len,pos,labelA,labelB,src,cable}){
+  const W=320,H=74,x0=26,x1=W-26,X=v=>x0+(x1-x0)*Math.min(1,Math.max(0,v/len));
+  const sx=fin(pos)?X(pos):null,ar='font-size="11" fill="var(--ink)" font-family="IBM Plex Sans Arabic,sans-serif"';
+  const sa=sx===null?'middle':sx<x0+30?'start':sx>x1-30?'end':'middle';
+  return`<div class="diag"><svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+    <line x1="${x0}" x2="${x1}" y1="34" y2="34" stroke="var(--muted)" stroke-width="${cable?6:2}" stroke-linecap="round" opacity="${cable?.45:1}"/>
+    <rect x="${x0-7}" y="26" width="14" height="16" rx="3" fill="var(--accent)"/><rect x="${x1-7}" y="26" width="14" height="16" rx="3" fill="${cable?'var(--muted)':'var(--accent)'}"/>
+    <text x="${x0}" y="62" text-anchor="middle" ${ar}>${labelA}</text><text x="${x1}" y="62" text-anchor="middle" ${ar}>${labelB}</text>
+    ${sx!==null?`<path d="M${sx},10 l7,12 h-14 z" fill="var(--bad)"/><line x1="${sx}" x2="${sx}" y1="22" y2="44" stroke="var(--bad)" stroke-width="2"/><text x="${sx}" y="${sa==='middle'?74:62}" dy="${sa==='middle'?-1:0}" text-anchor="${sa}" font-size="11" fill="var(--bad)" font-family="IBM Plex Mono,monospace">${src}</text>`:''}
+  </svg></div>`;
+}
+function calcLoc(){
+  const v=num('lV'),d=num('lD'),dt=num('lDt'),el=$('lOut');
+  if(!(v>0&&d>0&&fin(dt))){readout(el,'','<p class="muted">أدخل السرعة والمسافة و Δt.</p>');return}
+  const R=tofTwo(d,v,dt);
+  if(R.outside){readout(el,'warn',`<div class="status">المصدر خارج المسافة بين الحساسين</div><p class="small">الفرق الزمني ${nf(Math.abs(dt),1)} ns يقطع ${nf(Math.abs(v*dt),2)} m، وهذا أكبر من المسافة بين الحساسين أو يساويها. المصدر عند الحساس ${R.first} أو وراءه.</p>${lineDiag({len:d,pos:R.first==='A'?0:d,labelA:'A',labelB:'B',src:'وراء '+R.first})}<ul class="flags"><li>انقل الحساس الآخر إلى ما بعد ${R.first} وأعد القياس.</li></ul>`);return}
+  readout(el,'ok',`<div class="big">${nf(R.x,2)} <small>m من A</small></div><div class="kv"><span>من B</span><span class="num">${nf(d-R.x,2)} m</span><span>وصل أولاً إلى</span><span>${R.first==='='?'الاثنين معاً (المنتصف)':'الحساس '+R.first}</span></div>
+    ${lineDiag({len:d,pos:R.x,labelA:'A',labelB:'B',src:nf(R.x,2)+' m'})}
+    <ul class="flags"><li>خطأ 1 ns في القراءة يحرّك الموقع ${nf(v/2*100,0)} cm تقريباً. كرّر على عدة نبضات وخذ المتوسط.</li></ul>`);
+}
+$('lMed').addEventListener('input',()=>{if($('lMed').value!=='c')$('lV').value=$('lMed').value;calcLoc()});
+$('lV').addEventListener('input',()=>{if($('lMed').value!==$('lV').value)$('lMed').value=[...$('lMed').options].some(o=>o.value===$('lV').value)?$('lV').value:'c';calcLoc()});
+['lD','lDt'].forEach(id=>$(id).addEventListener('input',calcLoc));
+function calcTdr(){
+  const L=num('tL'),v=num('tV'),dt=num('tDt'),T=num('tT'),el=$('tOut');
+  $('tVout').innerHTML=L>0&&T>0?`السرعة المحسوبة <b class="num">v = ${nf(2*L/T,1)} m/µs</b> · <button class="linkbtn" id="tUse">استخدمها</button>`:'احقن نبضة عند الطرف القريب والطرف البعيد مفتوح، وقِس زمن عودتها: v = 2L / T.';
+  if($('tUse'))$('tUse').onclick=()=>{$('tV').value=+(2*L/T).toFixed(1);calcTdr()};
+  if(!(L>0&&v>0&&fin(dt))){readout(el,'','<p class="muted">أدخل الطول والسرعة و Δt.</p>');return}
+  const R=tdrOne(L,v,dt);
+  if(!R.valid){readout(el,'warn',`<div class="status">Δt خارج المدى الممكن (0 إلى ${nf(2*L/v,2)} µs)</div><p class="small">تأكد من طول الكيبل والسرعة، أو أن النبضة الثانية انعكاس من نفس الكيبل وليست نبضة أخرى.</p>`);return}
+  readout(el,'ok',`<div class="big">${nf(R.near,1)} <small>m من طرف القياس</small></div><div class="kv"><span>من الطرف البعيد</span><span class="num">${nf(R.far,1)} m</span><span>زمن الذهاب والعودة الكامل</span><span class="num">${nf(2*L/v,2)} µs</span></div>
+    ${lineDiag({len:L,pos:R.near,labelA:'HFCT',labelB:'الطرف البعيد',src:nf(R.near,0)+' m',cable:true})}
+    <ul class="flags"><li>إذا وقع الموقع عند وصلة معروفة فالوصلة هي المشتبه الأول.</li><li>المصدر قرب الطرف البعيد يعطي نبضتين متقاربتين جداً يصعب فصلهما، فقِس من الطرف الآخر للتأكيد.</li></ul>`);
+}
+['tL','tV','tDt','tT'].forEach(id=>$(id).addEventListener('input',calcTdr));
+
+/* units / IEC */
 function setU(src){
-  const g=id=>num(id),s=(id,v,d)=>{if(id!==src)$(id).value=Number.isFinite(v)?+v.toFixed(d):''};
+  const g=id=>num(id),s=(id,v,d)=>{if(id!==src)$(id).value=fin(v)?+v.toFixed(d):''};
   let dbmv;
   if(src==='uDbmv')dbmv=g('uDbmv');else if(src==='uMv')dbmv=g('uMv')>0?mvToDbmv(g('uMv')):NaN;else if(src==='uDbuv')dbmv=dbuvToDbmv(g('uDbuv'));
   if(src!=='uDbm'&&src!=='uDbmMv'){s('uDbmv',dbmv,3);s('uMv',dbmvToMv(dbmv),4);s('uDbuv',dbmv+60,3)}
@@ -625,115 +996,98 @@ function calcIec(){
 }
 ['iQ','iF1','iF2','iZ','qC','qV'].forEach(id=>$(id).addEventListener('input',calcIec));
 
-/* ---------- Calibration editor ---------- */
-let cals=[],editingId=null,db=null,canWrite=true;
-const EX={amp:[[20,-25.5],[50,-17.6],[100,-11.2],[200,-5.9],[500,2.6],[1000,7.4],[2000,14.7],[5000,22.1]],
-          energy:[[5,0.074],[10,0.31],[20,1.16],[50,7.6],[100,29.4]]};
-function ptRow(q='',y=''){return`<tr><td><input type="number" step="any" class="pq" value="${q}" aria-label="الشحنة pC"></td><td><input type="number" step="any" class="py" value="${y}" aria-label="القراءة"></td><td><button class="btn" data-del aria-label="حذف النقطة">×</button></td></tr>`}
+/* ================= PRPD gallery ================= */
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function prpdSvg(k){
+  const W=300,H=150,ml=8,mr=8,mt=8,mb=20,iw=W-ml-mr,ih=H-mt-mb,cy=mt+ih/2,A=ih/2-4;
+  const X=ph=>ml+ph/360*iw,Y=a=>cy-a/60*A;const R=rng(k.length*977+k.charCodeAt(0)),g=()=>(R()+R()+R()-1.5)/1.5;
+  const pts=[],add=(ph,a)=>pts.push([((ph%360)+360)%360,Math.max(-58,Math.min(58,a))]);
+  if(k==='void'){for(let i=0;i<130;i++){add(15+R()*80,18+R()*24+g()*4);add(195+R()*80,-(18+R()*24+g()*4))}}
+  if(k==='surface'){for(let i=0;i<120;i++){add(5+R()*110,14+R()*38);add(190+R()*95,-(6+R()*16))}}
+  if(k==='corona'){for(let i=0;i<150;i++)add(270+g()*16,-(9+R()*4));for(let i=0;i<14;i++)add(90+g()*14,22+R()*8)}
+  if(k==='float'){for(const c of[40,220])for(let i=0;i<40;i++){const lvl=[38,44][i%2];add(c-15+R()*40,(c<180?1:-1)*(lvl+g()*1.2))}}
+  if(k==='particle'){for(let i=0;i<110;i++)add(R()*360,(R()<.5?1:-1)*(4+R()**1.6*50))}
+  if(k==='noise'){for(let i=0;i<220;i++)add(R()*360,g()*7);for(const c of[60,240])for(let i=0;i<20;i++)add(c+g()*2,(R()<.5?1:-1)*R()*40)}
+  const sine=Array.from({length:61},(_,i)=>(i?'L':'M')+X(i*6).toFixed(1)+','+(cy-Math.sin(i*6*Math.PI/180)*A*.92).toFixed(1)).join('');
+  const ax=[0,90,180,270,360].map(p=>`<line x1="${X(p)}" x2="${X(p)}" y1="${mt}" y2="${mt+ih}" stroke="var(--grid)"/><text x="${X(p)}" y="${H-5}" text-anchor="${p===0?'start':p===360?'end':'middle'}" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${p}°</text>`).join('');
+  return`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="نمط PRPD توضيحي">${ax}<line x1="${ml}" x2="${ml+iw}" y1="${cy}" y2="${cy}" stroke="var(--line)"/><path d="${sine}" fill="none" stroke="var(--muted)" stroke-width="1.5" opacity=".7"/>${pts.map(([p,a])=>`<circle cx="${X(p).toFixed(1)}" cy="${Y(a).toFixed(1)}" r="1.9" fill="${k==='noise'?'var(--muted)':'var(--accent)'}" opacity=".8"/>`).join('')}</svg>`;
+}
+$('prpd').innerHTML=PRPD.map(p=>`<article class="pcard"><h3>${p.name}</h3><div class="diag" style="padding:6px">${prpdSvg(p.k)}</div><dl><dt>الشكل</dt><dd>${p.shape}</dd><dt>أين</dt><dd>${p.where}</dd><dt>يراه</dt><dd>${p.sens}</dd><dt>الخطورة</dt><dd>${p.risk}</dd><dt>الإجراء</dt><dd>${p.act}</dd></dl></article>`).join('');
+
+/* ================= CALIBRATION ================= */
+let editingId=null;
+const EX={amp:[[20,-25.5],[50,-17.6],[100,-11.2],[200,-5.9],[500,2.6],[1000,7.4],[2000,14.7],[5000,22.1]],energy:[[5,0.074],[10,0.31],[20,1.16],[50,7.6],[100,29.4]]};
+function ptRow(q='',y=''){return`<tr><td><input type="number" step="any" class="pq" value="${q}" aria-label="الشحنة pC"></td><td><input type="number" step="any" class="py" value="${y}" aria-label="القراءة"></td><td><button class="btn sm" data-del aria-label="حذف النقطة">×</button></td></tr>`}
 function setPts(arr){$('cPts').innerHTML=arr.map(([q,y])=>ptRow(q,y)).join('');calcFit()}
 function readPts(){return[...$('cPts').querySelectorAll('tr')].map(tr=>({q:Number(tr.querySelector('.pq').value),y:Number(tr.querySelector('.py').value),e:tr.querySelector('.pq').value===''||tr.querySelector('.py').value===''})).filter(p=>!p.e)}
-function syncKind(){
-  const en=$('cKind').value==='energy';
-  $('cUnitL').hidden=en;$('cForceL').hidden=en;
-  $('cYh').textContent=en?'الطاقة E (pJ)':'القراءة ('+$('cUnit').value+')';
-  if(en)$('cSen').value='uhf';
-}
+function syncKind(){const en=$('cKind').value==='energy';$('cUnitL').hidden=en;$('cForceL').hidden=en;$('cYh').textContent=en?'الطاقة E (pJ)':'القراءة ('+$('cUnit').value+')';if(en)$('cSen').value='uhf'}
 let lastFit=null;
 function calcFit(){
-  syncKind();
-  const kind=$('cKind').value,pts=readPts(),el=$('cFit');lastFit=null;
+  syncKind();const kind=$('cKind').value,pts=readPts(),el=$('cFit');lastFit=null;
   if(!pts.length){readout(el,'','<p class="muted">أدخل نقاط المعايرة: الشحنة المحقونة والقراءة المقابلة لها.</p>');return}
   try{
-    if(kind==='energy'){
-      const f=fitEnergy(pts);lastFit=f;
-      readout(el,'',`<div class="eqn">E = ${f.c.toExponential(3)} · q²   (pJ, pC)</div><div class="kv"><span>R²</span><span class="num">${nf(f.r2,4)}</span><span>عدد النقاط</span><span class="num">${f.n}</span></div>`);
-    }else{
-      const unit=$('cUnit').value,f=fitAmp(pts,$('cForce').checked,unit);lastFit=f;
-      const yl=unit==='mV'?'20log(mV)':unit;
-      const warn=[];
+    if(kind==='energy'){const f=fitEnergy(pts);lastFit=f;readout(el,'',`<div class="eqn">E = ${f.c.toExponential(3)} · q²   (pJ, pC)</div><div class="kv"><span>R²</span><span class="num">${nf(f.r2,4)}</span><span>عدد النقاط</span><span class="num">${f.n}</span></div>`)}
+    else{const unit=$('cUnit').value,f=fitAmp(pts,$('cForce').checked,unit);lastFit=f;const yl=unit==='mV'?'20log(mV)':unit,warn=[];
       if(!f.force&&Math.abs(f.b-1)>0.25)warn.push(`الميل b = ${nf(f.b,2)} بعيد عن 1، والعلاقة ليست تناسباً بسيطاً. تأكد من القراءات أو من تشبّع الجهاز.`);
       if(f.s>3)warn.push(`التشتت σ = ${nf(f.s,1)} dB كبير، فالمجال سيكون واسعاً. أعد القياس أو زِد عدد النقاط.`);
-      if(Number.isFinite(f.r2)&&f.r2<0)warn.push('R² سالب: فرض b = 1 أسوأ من المتوسط، والبيانات لا تدعم التناسب الخطي.');
+      if(fin(f.r2)&&f.r2<0)warn.push('R² سالب: فرض b = 1 أسوأ من المتوسط، والبيانات لا تدعم التناسب الخطي.');
       readout(el,warn.length?'warn':'ok',`<div class="eqn">${yl} = ${nf(f.a,2)} + ${nf(f.b,3)} · 20log₁₀(q)</div>
-        <div class="kv"><span>R²</span><span class="num">${nf(f.r2,3)}</span><span>σ (تشتت البواقي)</span><span class="num">${nf(f.s,2)} dB</span><span>عدد النقاط / درجات الحرية</span><span class="num">${f.n} / ${f.dof}</span>
-        ${unit!=='dBm'?`<span>k (عند b = 1)</span><span class="num">${nf(f.k*1e3,3)} µV/pC</span>`:''}</div>
-        ${warn.length?`<ul class="flags">${warn.map(w=>`<li>${w}</li>`).join('')}</ul>`:''}`);
-    }
+        <div class="kv"><span>R²</span><span class="num">${nf(f.r2,3)}</span><span>σ (تشتت البواقي)</span><span class="num">${nf(f.s,2)} dB</span><span>عدد النقاط / درجات الحرية</span><span class="num">${f.n} / ${f.dof}</span>${unit!=='dBm'?`<span>k (عند b = 1)</span><span class="num">${nf(f.k*1e3,3)} µV/pC</span>`:''}</div>
+        ${warn.length?`<ul class="flags">${warn.map(w=>`<li>${w}</li>`).join('')}</ul>`:''}`)}
   }catch(e){readout(el,'bad',`<p>${esc(e)}</p>`)}
 }
 $('cPts').addEventListener('input',calcFit);
 $('cPts').addEventListener('click',ev=>{const b=ev.target.closest('[data-del]');if(b){b.closest('tr').remove();calcFit()}});
 ['cKind','cUnit','cForce','cSen'].forEach(id=>$(id).addEventListener('input',calcFit));
 $('cAdd').onclick=()=>{$('cPts').insertAdjacentHTML('beforeend',ptRow());$('cPts').lastElementChild.querySelector('input').focus()};
-$('calEx').onclick=()=>{
-  const en=$('cKind').value==='energy';
-  if(!en){$('cUnit').value='dBmV';$('cSen').value='tev'}
-  if(!$('cName').value)$('cName').value='مثال — '+(en?'UHF طاقة':'TEV لوحة 3');
-  setPts(EX[en?'energy':'amp']);toast('تمت تعبئة بيانات مثال. استبدلها بقياساتك قبل الحفظ.');
-};
+$('calEx').onclick=()=>{const en=$('cKind').value==='energy';if(!en){$('cUnit').value='dBmV';$('cSen').value='tev'}
+  if(!$('cName').value)$('cName').value='مثال — '+(en?'UHF طاقة':'TEV لوحة 3');setPts(EX[en?'energy':'amp']);toast('تمت تعبئة بيانات مثال. استبدلها بقياساتك قبل الحفظ.')};
+$('cEq').innerHTML=$('sEq').innerHTML;
 function resetForm(){editingId=null;$('calTitle').textContent='معايرة جديدة';$('cName').value='';$('cSite').value='';$('cEq').value=eq;$('cSen').value='tev';$('cKind').value='amp';$('cUnit').value='dBmV';$('cForce').checked=false;setPts([['',''],['',''],['','']]);$('cSaveMsg').textContent=''}
 $('calNew').onclick=resetForm;
-$('cEq').innerHTML=Object.entries(EQ).map(([k,e])=>`<option value="${k}">${e.name} — ${e.ar}</option>`).join('');
-
 $('cSave').onclick=async()=>{
-  calcFit();
-  if(!lastFit){toast('أكمل نقاط المعايرة أولاً.');return}
+  calcFit();if(!lastFit){toast('أكمل نقاط المعايرة أولاً.');return}
   const kind=$('cKind').value;
-  const doc={name:$('cName').value.trim()||'بدون اسم',site:$('cSite').value.trim(),equip:$('cEq').value,sensor:kind==='energy'?'uhf':$('cSen').value,
-    kind,unit:kind==='energy'?'pJ':$('cUnit').value,force:kind==='amp'&&$('cForce').checked,
+  const doc={name:$('cName').value.trim()||'بدون اسم',site:$('cSite').value.trim(),equip:$('cEq').value,sensor:kind==='energy'?'uhf':$('cSen').value,kind,unit:kind==='energy'?'pJ':$('cUnit').value,force:kind==='amp'&&$('cForce').checked,
     points:readPts().map(p=>({q:p.q,y:p.y})),fit:{...lastFit},updatedAt:new Date().toISOString()};
-  if(!db){const id=editingId||('local-'+Date.now());cals=[...cals.filter(c=>c.id!==id),{id,...doc}];afterCals();toast('حُفظت لهذه الجلسة فقط، لأن التخزين غير متاح هنا.');return}
+  if(!db){const id=editingId||('local-'+Date.now());editingId=id;cals=[...cals.filter(c=>c.id!==id),{id,...doc}];afterCals();toast('حُفظت لهذه الجلسة فقط، لأن التخزين غير متاح هنا.');return}
   const btn=$('cSave');btn.disabled=true;$('cSaveMsg').textContent='جارٍ الحفظ…';
-  try{
-    const ref=editingId?db.collection('calibrations').doc(editingId):db.collection('calibrations').doc();
-    await ref.set(doc);editingId=ref.id;$('calTitle').textContent='تعديل: '+doc.name;$('cSaveMsg').textContent='';toast('حُفظت المعايرة.');
-  }catch(e){
-    $('cSaveMsg').textContent=e?.code==='invalid_argument'?'لا تملك صلاحية الحفظ في هذه الصفحة.':e?.code==='quota_exceeded'?'المساحة ممتلئة. احذف معايرات قديمة.':'تعذّر الحفظ، حاول مرة أخرى.';
-  }finally{btn.disabled=!canWrite}
+  try{const ref=editingId?db.collection('calibrations').doc(editingId):db.collection('calibrations').doc();await ref.set(doc);editingId=ref.id;$('calTitle').textContent='تعديل: '+doc.name;$('cSaveMsg').textContent='';toast('حُفظت المعايرة.')}
+  catch(e){$('cSaveMsg').textContent=e?.code==='invalid_argument'?'لا تملك صلاحية الحفظ في هذه الصفحة.':e?.code==='quota_exceeded'?'المساحة ممتلئة. احذف معايرات قديمة.':'تعذّر الحفظ، حاول مرة أخرى.'}
+  finally{btn.disabled=!canWrite}
 };
-
 function renderCals(){
   const el=$('calList');
   if(!cals.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">لا توجد معايرات محفوظة بعد. أدخل نقاط الحقن في النموذج أعلاه واضغط «حفظ المعايرة»، وستظهر هنا وفي قوائم الحاسبات.</div>`;return}
-  el.innerHTML=[...cals].sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||'')).map(c=>{
-    const f=c.fit||{},yl=c.unit==='mV'?'20log(mV)':c.unit;
+  el.innerHTML=[...cals].sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||'')).map(c=>{const f=c.fit||{},yl=c.unit==='mV'?'20log(mV)':c.unit;
     const eqn=c.kind==='energy'?`E = ${Number(f.c).toExponential(3)} · q²`:`${yl} = ${nf(f.a,2)} + ${nf(f.b,3)} · 20log₁₀(q)`;
-    return`<article class="cal">
-      <div class="row" style="justify-content:space-between"><h3>${esc(c.name)}</h3><span class="pill p-p" style="background:var(--accent-soft);color:var(--accent)">${esc((TESTS[c.sensor]||{}).name||c.sensor)}</span></div>
-      <p class="small muted">${esc(EQ[c.equip]?.name||'')}${c.site?' · '+esc(c.site):''} · ${c.updatedAt?new Date(c.updatedAt).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn'):''}</p>
-      <div class="eqn">${eqn}</div>
+    return`<article class="card" style="gap:8px"><div class="row between"><h3>${esc(c.name)}</h3><span class="pill" style="background:var(--accent-soft);color:var(--accent)">${esc((TESTS[c.sensor]||{}).name||c.sensor)}</span></div>
+      <p class="small muted">${esc(EQ[c.equip]?.name||'')}${c.site?' · '+esc(c.site):''}${c.updatedAt?' · '+fmtDate(c.updatedAt.slice(0,10)):''}</p><div class="eqn">${eqn}</div>
       <div class="kv"><span>R²</span><span class="num">${nf(f.r2,3)}</span>${c.kind==='amp'?`<span>σ</span><span class="num">${nf(f.s,2)} dB</span>`:''}<span>النقاط</span><span class="num">${(c.points||[]).length}</span></div>
-      <div class="row"><button class="btn" data-edit="${esc(c.id)}">تعديل</button><button class="btn" data-use="${esc(c.id)}">استخدم في الحاسبة</button><button class="btn danger" data-rm="${esc(c.id)}" ${canWrite?'':'disabled'}>حذف</button></div>
-    </article>`}).join('');
+      <div class="row"><button class="btn sm" data-edit="${esc(c.id)}">تعديل</button><button class="btn sm" data-use="${esc(c.id)}">استخدم في الحاسبة</button><button class="btn sm danger" data-rm="${esc(c.id)}" ${canWrite?'':'disabled'}>حذف</button></div></article>`}).join('');
 }
 $('calList').addEventListener('click',async ev=>{
   const b=ev.target.closest('button');if(!b)return;
   if(b.dataset.edit){const c=cals.find(x=>x.id===b.dataset.edit);if(!c)return;editingId=c.id;$('calTitle').textContent='تعديل: '+c.name;
     $('cName').value=c.name||'';$('cSite').value=c.site||'';$('cEq').value=c.equip||'ais';$('cKind').value=c.kind;$('cSen').value=c.sensor;if(c.kind==='amp')$('cUnit').value=c.unit;$('cForce').checked=!!c.force;
-    setPts((c.points||[]).map(p=>[p.q,p.y]));$('calTitle').scrollIntoView({behavior:'smooth',block:'start'});return}
+    setPts((c.points||[]).map(p=>[p.q,p.y]));$('calTitle').scrollIntoView({behavior:'smooth',block:'center'});return}
   if(b.dataset.use){const c=cals.find(x=>x.id===b.dataset.use);if(!c)return;
-    if(c.sensor==='tev'){$('tevCal').value=c.id;calcTev();showTab('tev')}
-    else if(c.sensor==='hfct'){$('hfM').value='cal';$('hfCal').value=c.id;calcHf();showTab('hfct')}
-    else{$('uhM').value=c.kind==='energy'?'en':'amp';if(c.kind==='amp')$('uhU').value=c.unit;calcUh();$('uhCal').value=c.id;calcUh();showTab('uhf')}
-    $('tabs').scrollIntoView({behavior:'smooth',block:'start'});return}
-  if(b.dataset.rm){
-    if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='تأكيد الحذف';setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent='حذف'}},4000);return}
-    const id=b.dataset.rm;
-    if(!db||id.startsWith('local-')){cals=cals.filter(c=>c.id!==id);afterCals();return}
-    try{await db.collection('calibrations').doc(id).delete();if(editingId===id)resetForm();toast('حُذفت المعايرة.')}catch(e){toast('تعذّر الحذف.')}
-  }
+    if(c.sensor==='tev'&&c.kind==='amp'){$('tevCal').value=c.id;calcTev();showCalc('tev')}
+    else if(c.sensor==='hfct'){$('hfM').value='cal';calcHf();$('hfCal').value=c.id;calcHf();showCalc('hfct')}
+    else{$('uhM').value=c.kind==='energy'?'en':'amp';if(c.kind==='amp')$('uhU').value=c.unit;calcUh();$('uhCal').value=c.id;calcUh();showCalc('uhf')}
+    showSec('calc',true);return}
+  if(b.dataset.rm){if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='تأكيد الحذف';setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent='حذف'}},4000);return}
+    const id=b.dataset.rm;if(!db||id.startsWith('local-')){cals=cals.filter(c=>c.id!==id);if(editingId===id)resetForm();afterCals();return}
+    try{await db.collection('calibrations').doc(id).delete();if(editingId===id)resetForm();toast('حُذفت المعايرة.')}catch(e){toast('تعذّر الحذف.')}}
 });
 function afterCals(){renderCals();calOptions($('tevCal'),'tev',true);calOptions($('hfCal'),'hfct',false);calcTev();calcHf();calcUh()}
 
-/* ---------- thresholds ---------- */
-const THR_UI=[['TEV (dBmV)',[['tevA','متوسط من'],['tevR','مرتفع من'],['tevBg','خلفية عالية من']]],
-  ['موجات فوق صوتية (dB فوق الخلفية)',[['usA','متوسط من'],['usR','مرتفع من']]],
-  ['HFCT (pC)',[['hfA','متوسط من'],['hfR','مرتفع من']]],
-  ['UHF (dB فوق الضوضاء)',[['uhA','متوسط من'],['uhR','مرتفع من']]]];
+/* thresholds */
+const THR_UI=[['TEV (dBmV)',[['tevA','متوسط من'],['tevR','مرتفع من'],['tevBg','خلفية عالية من']]],['موجات فوق صوتية (dB فوق الخلفية)',[['usA','متوسط من'],['usR','مرتفع من']]],['HFCT (pC)',[['hfA','متوسط من'],['hfR','مرتفع من']]],['UHF (dB فوق الضوضاء)',[['uhA','متوسط من'],['uhR','مرتفع من']]]];
 $('thrGrid').innerHTML=THR_UI.map(([t,f])=>`<fieldset><legend>${t}</legend>${f.map(([k,l])=>`<label class="f">${l}<input type="number" step="any" id="th-${k}"></label>`).join('')}</fieldset>`).join('');
 function fillThr(){Object.keys(DEF).forEach(k=>$('th-'+k).value=thr[k])}
-function readThr(){const o={};for(const k of Object.keys(DEF)){const v=Number($('th-'+k).value);o[k]=Number.isFinite(v)&&$('th-'+k).value!==''?v:DEF[k]}return o}
-function recalc(){calcTev();calcUs();calcHf();calcUh()}
+function readThr(){const o={};for(const k of Object.keys(DEF)){const s=$('th-'+k).value,v=Number(s);o[k]=s!==''&&Number.isFinite(v)?v:DEF[k]}return o}
+function recalc(){calcTev();calcUs();calcHf();calcUh();calcSurvey();if(!$('s-log').hidden)renderLog()}
 $('thrGrid').addEventListener('input',()=>{thr=readThr();recalc()});
 $('thrReset').onclick=()=>{thr={...DEF};fillThr();recalc()};
 $('thrSave').onclick=async()=>{
@@ -743,20 +1097,22 @@ $('thrSave').onclick=async()=>{
   try{await db.doc('config/thresholds').set(thr);$('thrMsg').textContent='';toast('حُفظت الحدود.')}catch(e){$('thrMsg').textContent=e?.code==='invalid_argument'?'لا تملك صلاحية تعديل الحدود.':'تعذّر الحفظ.'}
 };
 
-/* ---------- boot ---------- */
-renderEq();fillThr();resetForm();setU('uDbmv');setU('uDbm');calcIec();afterCals();calcUs();
-let startTab='tev';try{const t=localStorage.getItem('pd.tab');if(t&&TABS.some(x=>x[0]===t))startTab=t}catch(e){}
-showTab(startTab);
-$('dbState').textContent='جارٍ تحميل المعايرات…';
+/* ================= boot ================= */
+renderEq();renderSurveyCards();assetOptions();fillThr();resetForm();setU('uDbmv');setU('uDbm');calcIec();afterCals();calcUs();calcLoc();calcTdr();calcSurvey();showCalc('tev');
+let start='guide';try{const h=location.hash.slice(1),s=localStorage.getItem('pd.sec');if(SECS.some(x=>x[0]===h))start=h;else if(s&&SECS.some(x=>x[0]===s))start=s}catch(e){}
+showSec(start);
+$('dbState').textContent='جارٍ تحميل البيانات المحفوظة…';
 (async()=>{
-  const d=window.claude?.use?await window.claude.use('db'):null;
-  if(!d){$('dbState').textContent='الحفظ غير متاح هنا. المعايرات تبقى لهذه الجلسة فقط.';return}
+  const use=n=>window.claude?.use?window.claude.use(n):Promise.resolve(null);
+  use('downloads').then(d=>{dl=d}).catch(()=>{});
+  const d=await use('db');
+  if(!d){$('dbState').textContent='الحفظ غير متاح هنا. البيانات تبقى لهذه الجلسة فقط.';return}
   db=d;
-  try{const u=await window.claude.use('user');if(u&&(await u.can('data.write'))===false){canWrite=false;$('cSave').disabled=true;$('thrSave').disabled=true;$('cSaveMsg').textContent='عرض فقط: لا تملك صلاحية الحفظ.'}}catch(e){}
-  db.collection('calibrations').onSnapshot(s=>{
-    const local=cals.filter(c=>String(c.id).startsWith('local-'));
-    cals=[...s.docs.map(x=>({id:x.id,...x.data()})),...local];$('dbState').textContent='';afterCals();
-  },()=>{$('dbState').textContent='تعذّر تحميل المعايرات المحفوظة.'});
+  try{const u=await use('user');if(u&&(await u.can('data.write'))===false){canWrite=false;['cSave','thrSave','sSave','naAdd'].forEach(id=>$(id).disabled=true);$('sMsg').textContent='عرض فقط: لا تملك صلاحية الحفظ.';$('cSaveMsg').textContent='عرض فقط.'}}catch(e){}
+  const keepLocal=arr=>arr.filter(x=>String(x.id).startsWith('local-'));
+  db.collection('calibrations').onSnapshot(s=>{cals=[...s.docs.map(x=>({id:x.id,...x.data()})),...keepLocal(cals)];$('dbState').textContent='';afterCals()},()=>{$('dbState').textContent='تعذّر تحميل المعايرات المحفوظة.'});
+  db.collection('assets').onSnapshot(s=>{assets=[...s.docs.map(x=>({id:x.id,...x.data()})),...keepLocal(assets)];assetOptions();if(pendingAsset&&assets.some(a=>a.id===pendingAsset)){$('sAsset').value=pendingAsset;pendingAsset=null}calcSurvey();if(!$('s-log').hidden)renderLog()},()=>{});
+  db.collection('surveys').onSnapshot(s=>{surveys=[...s.docs.map(x=>({id:x.id,...x.data()})),...keepLocal(surveys)];calcSurvey();if(!$('s-log').hidden)renderLog()},()=>{});
   db.doc('config/thresholds').onSnapshot(s=>{if(s.exists){thr={...DEF,...s.data()};fillThr();recalc()}},()=>{});
 })();
 </script>
